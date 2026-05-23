@@ -41,10 +41,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "blocked.html",
         "config.js",
-        "blocked-pages/*",
-        "lib/*"
+        "blocked-pages/*"
       ],
       "matches": ["<all_urls>"]
     }

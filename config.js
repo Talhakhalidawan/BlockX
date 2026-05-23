@@ -12,9 +12,8 @@ const CONFIG = {
   ],
 
   GAMES: [
-    { name: "Drive Mad", path: "blocked-pages/drive-mad.html" },
-    { name: "Rubiks Cube", path: "blocked-pages/rubiks-cube.html" },
     { name: "Tower Blocks", path: "blocked-pages/tower-blocks.html" },
+    { name: "Rubiks Cube", path: "blocked-pages/rubiks-cube.html" },
   ]
 };
 

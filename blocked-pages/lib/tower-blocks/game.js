@@ -32,12 +32,14 @@
 
                 // camera
                 let aspect = window.innerWidth / window.innerHeight;
-                let d = 20;
+                let d = 30; // Increased from 20 for a wider view
                 this.camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, -100, 1000);
-                this.camera.position.x = 2;
-                this.camera.position.y = 2;
-                this.camera.position.z = 2;
-                this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+                this.camera.position.x = 10;
+                this.camera.position.y = 12; // Increased from 4 for better placement visibility
+                this.camera.position.z = 10;
+                
+                this.lookAtTarget = new THREE.Vector3(0, 0, 0);
+                this.camera.lookAt(this.lookAtTarget);
 
                 // light
                 this.light = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -52,8 +54,14 @@
             }
 
             setCamera(y, speed = 0.3) {
-                TweenLite.to(this.camera.position, speed, { y: y + 4, ease: Power1.easeInOut });
-                TweenLite.to(this.camera.lookAt, speed, { y: y, ease: Power1.easeInOut });
+                TweenLite.to(this.camera.position, speed, { y: y + 9, ease: Power1.easeInOut });
+                TweenLite.to(this.lookAtTarget, speed, { 
+                    y: y, 
+                    ease: Power1.easeInOut,
+                    onUpdate: () => {
+                        this.camera.lookAt(this.lookAtTarget);
+                    }
+                });
             }
 
             onResize() {
