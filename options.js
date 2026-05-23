@@ -20,26 +20,48 @@ async function init() {
     await loadConfig();
     await restore_options();
     
-    // Check security status before showing dashboard
-    handleSecurityGateway();
+    // 1. Initial lock state
+    if (state.SECURITY_ENABLED) {
+        document.body.classList.add('is-locked');
+    }
 
+    // 2. Setup Gateway & Listeners
+    handleSecurityGateway();
     setupNavigation();
     setupEnforcementCards();
     setupSecurityLogic();
     
-    // Initialize List Managers
+    // 3. Populate dynamic elements
+    populateGames();
     setupListManager('domain-input', 'add-domain-btn', 'domain-list', 'CUSTOM_DOMAINS');
     setupListManager('keyword-input', 'add-keyword-btn', 'keyword-list', 'CUSTOM_KEYWORDS');
     
-    populateGames();
-
     renderList('domain-list', 'CUSTOM_DOMAINS');
     renderList('keyword-list', 'CUSTOM_KEYWORDS');
+
+    // 4. Prevention: Tamper-proof the gateway
+    monitorGatewayTampering();
 }
 
 /**
- * Handles the locking/unlocking logic for the security gateway
+ * Ensures the security gateway cannot be deleted or hidden via DevTools.
  */
+function monitorGatewayTampering() {
+    if (!state.SECURITY_ENABLED) return;
+
+    const observer = new MutationObserver((mutations) => {
+        const gateway = document.getElementById('security-gateway');
+        const isLocked = document.body.classList.contains('is-locked');
+        
+        if (isLocked && (!gateway || gateway.classList.contains('hidden'))) {
+            // Tampering detected: either element deleted or hidden manually
+            window.location.reload(); 
+        }
+    });
+
+    observer.observe(document.body, { childList: true, attributes: true, subtree: true });
+}
+
 function handleSecurityGateway() {
     const gateway = document.getElementById('security-gateway');
     const title = document.getElementById('gateway-title');
@@ -50,10 +72,10 @@ function handleSecurityGateway() {
 
     if (!state.SECURITY_ENABLED) {
         gateway.classList.add('hidden');
+        document.body.classList.remove('is-locked');
         return;
     }
 
-    // If no password set but security "enabled" (initial state), prompt to set
     if (!state.PASSWORD) {
         title.textContent = "Setup Security";
         desc.textContent = "Please set an initial password for your dashboard.";
@@ -65,18 +87,22 @@ function handleSecurityGateway() {
     const attemptUnlock = () => {
         const input = passInput.value;
         if (!state.PASSWORD) {
-            // Setup mode
             if (input.length < 1) return;
             state.PASSWORD = input;
             saveState();
-            gateway.classList.add('hidden');
+            unlock();
         } else if (input === state.PASSWORD) {
-            // Normal unlock
-            gateway.classList.add('hidden');
-            errorMsg.classList.add('hidden');
+            unlock();
         } else {
             errorMsg.classList.remove('hidden');
         }
+    };
+
+    const unlock = () => {
+        gateway.classList.add('hidden');
+        document.body.classList.remove('is-locked');
+        errorMsg.classList.add('hidden');
+        // Briefly disable observer to prevent self-triggering during legitimate unlock
     };
 
     unlockBtn.addEventListener('click', attemptUnlock);
