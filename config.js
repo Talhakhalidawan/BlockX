@@ -3,7 +3,7 @@ const CONFIG = {
   BLOCK_METHOD: 'blocked_page', 
   
   // If true, shows the game specified in ACTIVE_GAME_INDEX instead of blocked.html
-  SHOW_GAME_INSTANTLY: false,
+  SHOW_GAME_INSTANTLY: true,
   ACTIVE_GAME_INDEX: 0, 
 
   KEYWORDS: [
@@ -12,7 +12,9 @@ const CONFIG = {
   ],
 
   GAMES: [
-    { name: "Tower Blocks", path: "blocked-pages/tower-blocks.html" }
+    { name: "Drive Mad", path: "blocked-pages/drive-mad.html" },
+    { name: "Rubiks Cube", path: "blocked-pages/rubiks-cube.html" },
+    { name: "Tower Blocks", path: "blocked-pages/tower-blocks.html" },
   ]
 };
 

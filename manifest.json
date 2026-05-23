@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Site Error",
+  "name": "BX",
   "version": "1.0",
   "description": "Network configuration and site management tool.",
   "permissions": [
