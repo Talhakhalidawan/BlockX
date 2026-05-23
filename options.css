@@ -262,20 +262,17 @@ body.is-locked {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    min-height: 200px;
-    padding: 12px;
-    background: #fdfdfd;
-    border: 1px solid var(--border-base);
-    border-radius: var(--radius-lg);
+    min-height: 100px;
+    padding: 20px 0;
     overflow-y: auto;
-    max-height: 400px;
+    max-height: 500px;
 }
 
 .tag-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 14px 20px;
     background: white;
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
@@ -283,12 +280,12 @@ body.is-locked {
     font-weight: 500;
     transition: all 0.2s;
     animation: slideIn 0.2s ease-out;
+    box-shadow: var(--shadow-sm);
 }
 
 .tag-item:hover {
     border-color: var(--accent);
     background: var(--accent-soft);
-    transform: translateX(4px);
 }
 
 @keyframes slideIn {
