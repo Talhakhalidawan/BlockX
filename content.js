@@ -37,8 +37,13 @@
     });
   }
 
-  // Phase 1: Pre-check URL instantly
-  if (containsExplicitContent(window.location.href)) {
+  // Phase 1: Pre-check URL and Domain instantly
+  const currentHostname = window.location.hostname;
+  const isBlockedDomain = CONFIG.DOMAINS.some(d => 
+    currentHostname === d || currentHostname.endsWith('.' + d)
+  );
+
+  if (isBlockedDomain || containsExplicitContent(window.location.href)) {
     handleBlock();
     return;
   }

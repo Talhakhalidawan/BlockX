@@ -53,13 +53,18 @@ function monitorGatewayTampering() {
         const gateway = document.getElementById('security-gateway');
         const isLocked = document.body.classList.contains('is-locked');
         
-        if (isLocked && (!gateway || gateway.classList.contains('hidden'))) {
-            // Tampering detected: either element deleted or hidden manually
-            window.location.reload(); 
+        // Safety: check if body still has the class before accessing gateway
+        if (isLocked) {
+            if (!gateway || (gateway.classList && gateway.classList.contains('hidden'))) {
+                // Tampering detected: either element deleted or hidden manually
+                window.location.reload(); 
+            }
         }
     });
 
-    observer.observe(document.body, { childList: true, attributes: true, subtree: true });
+    if (document.body) {
+        observer.observe(document.body, { childList: true, attributes: true, subtree: true });
+    }
 }
 
 function handleSecurityGateway() {
@@ -70,6 +75,8 @@ function handleSecurityGateway() {
     const passInput = document.getElementById('gateway-password');
     const errorMsg = document.getElementById('gateway-error');
 
+    if (!gateway) return;
+
     if (!state.SECURITY_ENABLED) {
         gateway.classList.add('hidden');
         document.body.classList.remove('is-locked');
@@ -77,15 +84,15 @@ function handleSecurityGateway() {
     }
 
     if (!state.PASSWORD) {
-        title.textContent = "Setup Security";
-        desc.textContent = "Please set an initial password for your dashboard.";
-        unlockBtn.textContent = "Set & Unlock";
+        if (title) title.textContent = "Setup Security";
+        if (desc) desc.textContent = "Please set an initial password for your dashboard.";
+        if (unlockBtn) unlockBtn.textContent = "Set & Unlock";
     }
 
     gateway.classList.remove('hidden');
 
     const attemptUnlock = () => {
-        const input = passInput.value;
+        const input = passInput ? passInput.value : '';
         if (!state.PASSWORD) {
             if (input.length < 1) return;
             state.PASSWORD = input;
@@ -94,21 +101,22 @@ function handleSecurityGateway() {
         } else if (input === state.PASSWORD) {
             unlock();
         } else {
-            errorMsg.classList.remove('hidden');
+            if (errorMsg) errorMsg.classList.remove('hidden');
         }
     };
 
     const unlock = () => {
         gateway.classList.add('hidden');
         document.body.classList.remove('is-locked');
-        errorMsg.classList.add('hidden');
-        // Briefly disable observer to prevent self-triggering during legitimate unlock
+        if (errorMsg) errorMsg.classList.add('hidden');
     };
 
-    unlockBtn.addEventListener('click', attemptUnlock);
-    passInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') attemptUnlock();
-    });
+    if (unlockBtn) unlockBtn.addEventListener('click', attemptUnlock);
+    if (passInput) {
+        passInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptUnlock();
+        });
+    }
 }
 
 function setupSecurityLogic() {
@@ -117,28 +125,34 @@ function setupSecurityLogic() {
     const updateBtn = document.getElementById('set-password-btn');
     const newPassInput = document.getElementById('new-password');
 
-    toggle.checked = state.SECURITY_ENABLED;
-    if (state.SECURITY_ENABLED) setupBox.classList.remove('hidden');
-
-    toggle.addEventListener('change', () => {
-        state.SECURITY_ENABLED = toggle.checked;
-        if (state.SECURITY_ENABLED) {
-            setupBox.classList.remove('hidden');
-        } else {
-            setupBox.classList.add('hidden');
-        }
-        saveState();
-    });
-
-    updateBtn.addEventListener('click', () => {
-        const pass = newPassInput.value;
-        if (pass) {
-            state.PASSWORD = pass;
+    if (toggle) {
+        toggle.checked = state.SECURITY_ENABLED;
+        toggle.addEventListener('change', () => {
+            state.SECURITY_ENABLED = toggle.checked;
+            if (setupBox) {
+                if (state.SECURITY_ENABLED) {
+                    setupBox.classList.remove('hidden');
+                } else {
+                    setupBox.classList.add('hidden');
+                }
+            }
             saveState();
-            showToast('Password updated successfully.');
-            newPassInput.value = '';
-        }
-    });
+        });
+    }
+
+    if (state.SECURITY_ENABLED && setupBox) setupBox.classList.remove('hidden');
+
+    if (updateBtn) {
+        updateBtn.addEventListener('click', () => {
+            const pass = newPassInput ? newPassInput.value : '';
+            if (pass) {
+                state.PASSWORD = pass;
+                saveState();
+                showToast('Password updated successfully.');
+                if (newPassInput) newPassInput.value = '';
+            }
+        });
+    }
 }
 
 function saveState() {
@@ -169,17 +183,21 @@ function setupNavigation() {
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            document.getElementById('page-title').textContent = sections[sectionId].title;
-            document.getElementById('page-subtitle').textContent = sections[sectionId].subtitle;
+            const titleEl = document.getElementById('page-title');
+            const subEl = document.getElementById('page-subtitle');
+            if (titleEl) titleEl.textContent = sections[sectionId].title;
+            if (subEl) subEl.textContent = sections[sectionId].subtitle;
 
             document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(`section-${sectionId}`).classList.add('active');
+            const targetSec = document.getElementById(`section-${sectionId}`);
+            if (targetSec) targetSec.classList.add('active');
         });
     });
 }
 
 function updateHubVisibility(method) {
     const gameSection = document.getElementById('game-selection');
+    if (!gameSection) return;
     if (method === 'blocked_page') {
         gameSection.classList.remove('hidden');
     } else {
@@ -204,7 +222,20 @@ function setupListManager(inputId, btnId, listId, stateKey) {
     if (!input || !btn) return;
 
     const addItem = () => {
-        const val = input.value.trim().toLowerCase();
+        let val = input.value.trim().toLowerCase();
+        if (!val) return;
+
+        // Domain Sanitization: strip https:// and paths
+        if (stateKey === 'CUSTOM_DOMAINS') {
+            try {
+                if (val.includes('://')) {
+                    val = new URL(val).hostname;
+                } else if (val.includes('/')) {
+                    val = val.split('/')[0];
+                }
+            } catch(e) {}
+        }
+        
         if (val && !state[stateKey].includes(val)) {
             state[stateKey].push(val);
             renderList(listId, stateKey);
@@ -268,7 +299,7 @@ function populateGames() {
             </div>
         `;
         const radio = label.querySelector('input');
-        radio.addEventListener('change', saveState);
+        if (radio) radio.addEventListener('change', saveState);
         gameList.appendChild(label);
     });
 }

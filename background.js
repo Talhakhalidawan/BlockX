@@ -24,11 +24,11 @@ async function updateBlockingRules() {
     const oldRuleIds = oldRules.map(rule => rule.id);
 
     // Load huge lists from JSON files
-    const badwords = await loadList('badwords.json');
-    const domains = await loadList('domains.json');
+    const masterBadwords = await loadList('badwords.json');
+    const masterDomains = await loadList('domains.json');
 
     let rules = [];
-    let ruleId = 100;
+    let ruleId = 1; // Start from 1 for reliability
     
     if (CONFIG.BLOCK_METHOD !== 'none') {
       function getAction() {
@@ -41,8 +41,6 @@ async function updateBlockingRules() {
           default:
             if (CONFIG.SHOW_GAME_INSTANTLY && CONFIG.GAMES.length > 0) {
               let gameIndex = CONFIG.ACTIVE_GAME_INDEX;
-              // For DNR rules, we can't easily do "random" per request without multiple rules.
-              // We'll pick a game during rule generation, or just use the first one if -1.
               if (gameIndex === -1) {
                 gameIndex = Math.floor(Math.random() * CONFIG.GAMES.length);
               }
@@ -56,51 +54,82 @@ async function updateBlockingRules() {
 
       const action = getAction();
 
-      // 1. Process Page URLs (Highest Priority)
+      // --- PRIORITY 1: CUSTOM USER DOMAINS ---
+      // These MUST be first so they are never truncated by the limit.
+      const customDomains = [...new Set(CONFIG.DOMAINS)]; 
+      customDomains.forEach((domain) => {
+        const d = domain.trim().toLowerCase();
+        if (rules.length < DYNAMIC_RULE_LIMIT && d && isAscii(d)) {
+          rules.push({
+            id: ruleId++,
+            priority: 10,
+            action: action,
+            condition: { urlFilter: `||${d}^`, resourceTypes: ['main_frame'] }
+          });
+        }
+      });
+
+      // --- PRIORITY 2: CUSTOM USER KEYWORDS ---
+      const customKeywords = [...new Set(CONFIG.KEYWORDS)];
+      customKeywords.forEach((kw) => {
+        const k = kw.trim().toLowerCase();
+        if (rules.length < DYNAMIC_RULE_LIMIT && k && isAscii(k)) {
+          rules.push({
+            id: ruleId++,
+            priority: 9,
+            action: action,
+            condition: { urlFilter: `*${k}*`, resourceTypes: ['main_frame'] }
+          });
+        }
+      });
+
+      // --- PRIORITY 3: PAGE SPECIFIC URLS ---
       CONFIG.PAGE_URLS.forEach((pageUrl) => {
         if (rules.length < DYNAMIC_RULE_LIMIT && isAscii(pageUrl)) {
           rules.push({
             id: ruleId++,
-            priority: 4,
+            priority: 8,
             action: action,
             condition: { urlFilter: `*${pageUrl}*`, resourceTypes: ['main_frame'] }
           });
         }
       });
 
-      // 2. Process Badwords (High Priority)
-      badwords.concat(CONFIG.KEYWORDS).forEach((kw) => {
-        if (rules.length < DYNAMIC_RULE_LIMIT && kw.trim() && isAscii(kw)) {
+      // --- PRIORITY 4: MASTER DOMAINS (From domains.json) ---
+      // Only add until we hit the limit
+      masterDomains.forEach((domain) => {
+        const d = domain.trim().toLowerCase();
+        if (rules.length < DYNAMIC_RULE_LIMIT && d && isAscii(d) && !customDomains.includes(d)) {
           rules.push({
             id: ruleId++,
-            priority: 2,
+            priority: 5,
             action: action,
-            condition: { urlFilter: `*${kw}*`, resourceTypes: ['main_frame'] }
+            condition: { urlFilter: `||${d}`, resourceTypes: ['main_frame'] }
           });
         }
       });
 
-      // 3. Process Domains (Up to limit)
-      domains.concat(CONFIG.DOMAINS).forEach((domain) => {
-        if (rules.length < DYNAMIC_RULE_LIMIT && domain.trim() && isAscii(domain)) {
+      // --- PRIORITY 5: MASTER BADWORDS (From badwords.json) ---
+      masterBadwords.forEach((kw) => {
+        const k = kw.trim().toLowerCase();
+        if (rules.length < DYNAMIC_RULE_LIMIT && k && isAscii(k) && !customKeywords.includes(k)) {
           rules.push({
             id: ruleId++,
-            priority: 3,
+            priority: 4,
             action: action,
-            condition: { urlFilter: `||${domain}`, resourceTypes: ['main_frame'] }
+            condition: { urlFilter: `*${k}*`, resourceTypes: ['main_frame'] }
           });
         }
       });
     }
 
-    console.log(`Applying ${rules.length} blocking rules...`);
+    console.log(`Applying ${rules.length} blocking rules (User defined domains: ${CONFIG.DOMAINS.length})...`);
 
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: oldRuleIds,
       addRules: rules
     });
   } catch (err) {
-    // This catches the missing syntax and API errors properly
     console.error("Failed to update DNR rules:", err);
   }
 }
@@ -108,7 +137,6 @@ async function updateBlockingRules() {
 chrome.runtime.onInstalled.addListener(updateBlockingRules);
 chrome.runtime.onStartup.addListener(updateBlockingRules);
 
-// Listen for settings changes
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
     updateBlockingRules();

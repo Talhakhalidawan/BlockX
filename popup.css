@@ -1,0 +1,240 @@
+:root {
+    --accent: #1900FF;
+    --accent-soft: rgba(25, 0, 255, 0.05);
+    --bg-main: #ffffff;
+    --bg-sub: #f9fafb;
+    --text-main: #111827;
+    --text-sub: #6b7280;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    margin: 0;
+    width: 320px;
+    background: var(--bg-main);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+.popup-container {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.popup-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo {
+    width: 24px;
+    height: 24px;
+}
+
+.brand-name {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.02em;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-sub);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--bg-sub);
+    color: var(--accent);
+}
+
+.icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Content */
+.popup-content {
+    padding: 20px;
+}
+
+.context-card {
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.site-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.domain-text {
+    font-weight: 700;
+    font-size: 15px;
+    word-break: break-all;
+}
+
+.type-badge {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-sub);
+    letter-spacing: 0.05em;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.expand-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.expand-btn .chevron {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s;
+}
+
+.expand-btn.active .chevron {
+    transform: rotate(180deg);
+}
+
+/* Quick Add Panel */
+.quick-add-panel {
+    margin-top: 12px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+}
+
+#quick-input {
+    flex: 1;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+#quick-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+#quick-save-btn {
+    width: 60px;
+    height: 38px;
+    background: var(--accent);
+    color: white;
+}
+
+.help-text {
+    font-size: 11px;
+    color: var(--text-sub);
+    margin: 8px 0 0;
+    padding-left: 2px;
+}
+
+/* Footer */
+.popup-footer {
+    padding: 12px 20px;
+    background: var(--bg-sub);
+    border-top: 1px solid var(--border);
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sub);
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+.hidden { display: none !important; }
+.btn-primary { background: var(--accent); color: white; }
