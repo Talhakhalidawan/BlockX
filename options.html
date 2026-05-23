@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlockX Dashboard</title>
+    <link rel="stylesheet" href="options.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="app-brand">
+                <div class="brand-icon">
+                    <img src="icons/icon128.png" alt="BlockX Logo" class="brand-img">
+                </div>
+                <span class="brand-name">BlockX</span>
+            </div>
+            
+            <nav class="app-nav">
+                <a href="#" class="nav-link active" data-section="general">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <span>General</span>
+                </a>
+                <a href="#" class="nav-link" data-section="lists">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y1="21"></line></svg>
+                    <span>Block List</span>
+                </a>
+                <a href="#" class="nav-link" data-section="keywords">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y1="20"></line></svg>
+                    <span>Keywords</span>
+                </a>
+                <a href="#" class="nav-link" data-section="security">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <span>Security</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="dot pulse"></span>
+                    <span>System Active</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <header class="workspace-header">
+                <div class="header-content">
+                    <h1 id="page-title">General Settings</h1>
+                    <p id="page-subtitle">Configure your core protection parameters.</p>
+                </div>
+            </header>
+
+            <div class="workspace-content">
+                <!-- General Section -->
+                <div id="section-general" class="settings-section active">
+                    <div class="settings-group">
+                        <div class="group-header">
+                            <h3>Block Enforcement</h3>
+                            <p>Select the visual or network behavior for restricted resources.</p>
+                        </div>
+                        
+                        <div class="enforcement-grid">
+                            <label class="enforcement-card">
+                                <input type="radio" name="blockMethod" value="data_uri" class="sr-only">
+                                <div class="card-content">
+                                    <div class="card-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                                    </div>
+                                    <div class="card-info">
+                                        <span class="title">Discreet Null</span>
+                                        <span class="desc">A lightweight, empty data response.</span>
+                                    </div>
+                                    <div class="selection-check">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="enforcement-card">
+                                <input type="radio" name="blockMethod" value="infinite_hang" class="sr-only">
+                                <div class="card-content">
+                                    <div class="card-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    </div>
+                                    <div class="card-info">
+                                        <span class="title">Connection Error</span>
+                                        <span class="desc">Simulates a standard network timeout.</span>
+                                    </div>
+                                    <div class="selection-check">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="enforcement-card">
+                                <input type="radio" name="blockMethod" value="blocked_page" class="sr-only">
+                                <div class="card-content">
+                                    <div class="card-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 12h.01M18 12h.01M12 12h.01M9 12h.01M15 12h.01"></path></svg>
+                                    </div>
+                                    <div class="card-info">
+                                        <span class="title">Interactive Hub</span>
+                                        <span class="desc">Redirects to a customizable landing zone.</span>
+                                    </div>
+                                    <div class="selection-check">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="game-selection" class="settings-group collapsible hidden">
+                        <div class="group-header">
+                            <h3>Hub Experience</h3>
+                            <p>Choose the interactive element for the blocked page hub.</p>
+                        </div>
+                        <div class="hub-options">
+                            <label class="hub-item">
+                                <input type="radio" name="activeGame" value="-1" class="sr-only">
+                                <div class="hub-item-box">
+                                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                    <span>Dynamic (Random)</span>
+                                </div>
+                            </label>
+                            <div id="game-list" class="hub-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lists Section -->
+                <div id="section-lists" class="settings-section">
+                    <div class="settings-group">
+                        <div class="group-header">
+                            <h3>Restricted Domains</h3>
+                            <p>Traffic to these hostnames will be blocked at the protocol level.</p>
+                        </div>
+                        
+                        <div class="interactive-list-manager">
+                            <div class="input-row">
+                                <input type="text" id="domain-input" placeholder="Add new domain (e.g. facebook.com)">
+                                <button id="add-domain-btn" class="btn btn-secondary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add
+                                </button>
+                            </div>
+                            <div id="domain-list" class="tag-cloud">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keywords Section -->
+                <div id="section-keywords" class="settings-section">
+                    <div class="settings-group">
+                        <div class="group-header">
+                            <h3>Pattern Filtering</h3>
+                            <p>Block access if the URL or page title matches these specific patterns.</p>
+                        </div>
+                        
+                        <div class="interactive-list-manager">
+                            <div class="input-row">
+                                <input type="text" id="keyword-input" placeholder="Add new keyword (e.g. addictive-site)">
+                                <button id="add-keyword-btn" class="btn btn-secondary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add
+                                </button>
+                            </div>
+                            <div id="keyword-list" class="tag-cloud">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="toast" class="toast-notification">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span id="toast-text">Changes synced across system.</span>
+            </div>
+        </main>
+    </div>
+    <script src="config.js"></script>
+    <script src="options.js"></script>
+</body>
+</html>

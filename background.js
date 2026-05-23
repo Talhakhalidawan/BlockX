@@ -19,6 +19,7 @@ const isAscii = (str) => /^[\x00-\x7F]*$/.test(str);
 
 async function updateBlockingRules() {
   try {
+    await loadConfig();
     const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
     const oldRuleIds = oldRules.map(rule => rule.id);
 
@@ -39,7 +40,13 @@ async function updateBlockingRules() {
           case 'blocked_page':
           default:
             if (CONFIG.SHOW_GAME_INSTANTLY && CONFIG.GAMES.length > 0) {
-              const game = CONFIG.GAMES[CONFIG.ACTIVE_GAME_INDEX];
+              let gameIndex = CONFIG.ACTIVE_GAME_INDEX;
+              // For DNR rules, we can't easily do "random" per request without multiple rules.
+              // We'll pick a game during rule generation, or just use the first one if -1.
+              if (gameIndex === -1) {
+                gameIndex = Math.floor(Math.random() * CONFIG.GAMES.length);
+              }
+              const game = CONFIG.GAMES[gameIndex];
               return { type: 'redirect', redirect: { extensionPath: '/' + game.path } };
             } else {
               return { type: 'redirect', redirect: { extensionPath: '/blocked.html' } };
@@ -100,6 +107,13 @@ async function updateBlockingRules() {
 
 chrome.runtime.onInstalled.addListener(updateBlockingRules);
 chrome.runtime.onStartup.addListener(updateBlockingRules);
+
+// Listen for settings changes
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local') {
+    updateBlockingRules();
+  }
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getConfig') {

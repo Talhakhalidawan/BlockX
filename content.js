@@ -1,5 +1,7 @@
-(function() {
+(async function() {
   // CONFIG and getBlockUrl are loaded via manifest.json (config.js)
+  await loadConfig();
+  
   let BADWORDS = [];
 
   // Fetch badwords list for title checking

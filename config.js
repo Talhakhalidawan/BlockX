@@ -1,4 +1,4 @@
-const CONFIG = {
+let CONFIG = {
   // 'blocked_page', 'infinite_hang', 'data_uri'
   BLOCK_METHOD: 'blocked_page', 
   
@@ -27,9 +27,33 @@ const CONFIG = {
   ]
 };
 
+/**
+ * Loads configuration from chrome.storage.local and merges it into CONFIG.
+ */
+async function loadConfig() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get({
+      BLOCK_METHOD: 'blocked_page',
+      CUSTOM_KEYWORDS: [],
+      CUSTOM_DOMAINS: [],
+      ACTIVE_GAME_INDEX: -1
+    }, (items) => {
+      CONFIG.BLOCK_METHOD = items.BLOCK_METHOD;
+      CONFIG.KEYWORDS = items.CUSTOM_KEYWORDS;
+      CONFIG.DOMAINS = items.CUSTOM_DOMAINS;
+      CONFIG.ACTIVE_GAME_INDEX = items.ACTIVE_GAME_INDEX;
+      resolve(CONFIG);
+    });
+  });
+}
+
 function getBlockUrl(method, hostname, extensionUrl) {
   if (method === 'blocked_page' && CONFIG.SHOW_GAME_INSTANTLY && CONFIG.GAMES.length > 0) {
-    const game = CONFIG.GAMES[CONFIG.ACTIVE_GAME_INDEX];
+    let gameIndex = CONFIG.ACTIVE_GAME_INDEX;
+    if (gameIndex === -1) {
+      gameIndex = Math.floor(Math.random() * CONFIG.GAMES.length);
+    }
+    const game = CONFIG.GAMES[gameIndex];
     return chrome.runtime.getURL(game.path);
   }
 
