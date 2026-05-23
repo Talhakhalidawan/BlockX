@@ -42,7 +42,8 @@
     {
       "resources": [
         "config.js",
-        "blocked-pages/*"
+        "blocked-pages/*",
+        "data/*"
       ],
       "matches": ["<all_urls>"]
     }

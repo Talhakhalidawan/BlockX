@@ -1,54 +1,101 @@
 // Import shared config
 importScripts('config.js');
 
+// Chrome limits "unsafe" (redirect) rules to 5,000, not 30,000. 
+const DYNAMIC_RULE_LIMIT = chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES || 5000;
+
+async function loadList(filename) {
+    try {
+        const response = await fetch(chrome.runtime.getURL('data/' + filename));
+        return await response.json();
+    } catch (e) {
+        console.error(`Failed to load ${filename}:`, e);
+        return [];
+    }
+}
+
+// Helper to ensure urlFilter only contains valid ASCII characters
+const isAscii = (str) => /^[\x00-\x7F]*$/.test(str);
+
 async function updateBlockingRules() {
-  const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const oldRuleIds = oldRules.map(rule => rule.id);
+  try {
+    const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const oldRuleIds = oldRules.map(rule => rule.id);
 
-  let rules = [];
-  
-  if (CONFIG.BLOCK_METHOD !== 'none') {
-    CONFIG.KEYWORDS.forEach((kw, index) => {
-      let action;
-      const id = index + 100;
+    // Load huge lists from JSON files
+    const badwords = await loadList('badwords.json');
+    const domains = await loadList('domains.json');
 
-      // Determine the target URL based on config
-      const targetUrl = getBlockUrl(CONFIG.BLOCK_METHOD);
-
-      switch (CONFIG.BLOCK_METHOD) {
-        case 'infinite_hang':
-          action = { type: 'redirect', redirect: { url: targetUrl } };
-          break;
-        case 'data_uri':
-          action = { type: 'redirect', redirect: { url: 'data:text/plain,Blocked' } };
-          break;
-        case 'blocked_page':
-        default:
-          if (CONFIG.SHOW_GAME_INSTANTLY) {
-             const game = CONFIG.GAMES[CONFIG.ACTIVE_GAME_INDEX];
-             action = { type: 'redirect', redirect: { extensionPath: '/' + game.path } };
-          } else {
-             action = { type: 'redirect', redirect: { extensionPath: '/blocked.html' } };
-          }
-          break;
+    let rules = [];
+    let ruleId = 100;
+    
+    if (CONFIG.BLOCK_METHOD !== 'none') {
+      function getAction() {
+        switch (CONFIG.BLOCK_METHOD) {
+          case 'infinite_hang':
+            return { type: 'redirect', redirect: { url: 'http://1.1.1.1:81' } };
+          case 'data_uri':
+            return { type: 'redirect', redirect: { url: 'data:text/plain,Blocked' } };
+          case 'blocked_page':
+          default:
+            if (CONFIG.SHOW_GAME_INSTANTLY && CONFIG.GAMES.length > 0) {
+              const game = CONFIG.GAMES[CONFIG.ACTIVE_GAME_INDEX];
+              return { type: 'redirect', redirect: { extensionPath: '/' + game.path } };
+            } else {
+              return { type: 'redirect', redirect: { extensionPath: '/blocked.html' } };
+            }
+        }
       }
 
-      rules.push({
-        id: id,
-        priority: 2,
-        action: action,
-        condition: {
-          urlFilter: `*${kw}*`,
-          resourceTypes: ['main_frame']
+      const action = getAction();
+
+      // 1. Process Page URLs (Highest Priority)
+      CONFIG.PAGE_URLS.forEach((pageUrl) => {
+        if (rules.length < DYNAMIC_RULE_LIMIT && isAscii(pageUrl)) {
+          rules.push({
+            id: ruleId++,
+            priority: 4,
+            action: action,
+            condition: { urlFilter: `*${pageUrl}*`, resourceTypes: ['main_frame'] }
+          });
         }
       });
-    });
-  }
 
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: oldRuleIds,
-    addRules: rules
-  });
+      // 2. Process Badwords (High Priority)
+      badwords.concat(CONFIG.KEYWORDS).forEach((kw) => {
+        if (rules.length < DYNAMIC_RULE_LIMIT && kw.trim() && isAscii(kw)) {
+          rules.push({
+            id: ruleId++,
+            priority: 2,
+            action: action,
+            condition: { urlFilter: `*${kw}*`, resourceTypes: ['main_frame'] }
+          });
+        }
+      });
+
+      // 3. Process Domains (Up to limit)
+      domains.concat(CONFIG.DOMAINS).forEach((domain) => {
+        if (rules.length < DYNAMIC_RULE_LIMIT && domain.trim() && isAscii(domain)) {
+          rules.push({
+            id: ruleId++,
+            priority: 3,
+            action: action,
+            condition: { urlFilter: `||${domain}`, resourceTypes: ['main_frame'] }
+          });
+        }
+      });
+    }
+
+    console.log(`Applying ${rules.length} blocking rules...`);
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: oldRuleIds,
+      addRules: rules
+    });
+  } catch (err) {
+    // This catches the missing syntax and API errors properly
+    console.error("Failed to update DNR rules:", err);
+  }
 }
 
 chrome.runtime.onInstalled.addListener(updateBlockingRules);

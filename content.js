@@ -1,12 +1,19 @@
 (function() {
   // CONFIG and getBlockUrl are loaded via manifest.json (config.js)
+  let BADWORDS = [];
+
+  // Fetch badwords list for title checking
+  fetch(chrome.runtime.getURL('data/badwords.json'))
+    .then(r => r.json())
+    .then(list => {
+      BADWORDS = list;
+      verifyPageSafety(); // Re-check title after list loads
+    });
 
   function handleBlock() {
     const hostname = window.location.hostname;
-    // getBlockUrl will return the game URL if SHOW_GAME_INSTANTLY is true
     const targetUrl = getBlockUrl(CONFIG.BLOCK_METHOD, hostname);
     
-    // Notify background for a tab-level redirect if needed
     if (CONFIG.BLOCK_METHOD === 'blocked_page') {
       chrome.runtime.sendMessage({ action: 'triggerBlock' });
     }
@@ -14,19 +21,27 @@
   }
 
   function containsExplicitContent(text) {
+    if (!text) return false;
     const lowerText = text.toLowerCase();
-    return CONFIG.KEYWORDS.some(kw => {
-      if (kw.length <= 3) return lowerText.includes(kw);
-      const regex = new RegExp(`\\b${kw}\\b`, 'i');
-      return regex.test(lowerText);
+    
+    // Check combined keywords (custom + JSON)
+    const allKeywords = CONFIG.KEYWORDS.concat(BADWORDS);
+    
+    return allKeywords.some(kw => {
+      if (!kw || kw.length < 3) return false;
+      // Use simple includes for the huge list to keep performance high
+      // but only if it's not a common sub-word
+      return lowerText.includes(kw.toLowerCase());
     });
   }
 
+  // Phase 1: Pre-check URL instantly
   if (containsExplicitContent(window.location.href)) {
     handleBlock();
     return;
   }
 
+  // Phase 2: Inject CSS to obscure page
   const css = 'html { visibility: hidden !important; background: #ffffff !important; }';
   const head = document.head || document.documentElement;
   const style = document.createElement('style');
@@ -34,14 +49,15 @@
   style.appendChild(document.createTextNode(css));
   head.appendChild(style);
 
+  // Phase 3: Evaluate title safety dynamically
   function verifyPageSafety() {
-    if (document.title) {
-      if (containsExplicitContent(document.title)) {
-        observer.disconnect();
-        handleBlock();
-      } else {
-        if (style.parentNode) style.parentNode.removeChild(style);
-      }
+    if (document.title && containsExplicitContent(document.title)) {
+      observer.disconnect();
+      handleBlock();
+    } else if (document.title) {
+      // If we've reached DOMContentLoaded and the title is safe, remove the barrier
+      // (Safety net handles this too)
+      if (style.parentNode) style.parentNode.removeChild(style);
     }
   }
 

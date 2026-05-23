@@ -6,9 +6,19 @@ const CONFIG = {
   SHOW_GAME_INSTANTLY: true,
   ACTIVE_GAME_INDEX: 0, 
 
-  KEYWORDS: [
-    'porn', 'nude', 'xxx', 'hentai', 'pornhub', 'xvideos', 
-    'sex', 'adult', 'fuck', 'bastard', 'facebook'
+  // Custom Keywords (Overridden by badwords.json if loaded)
+  KEYWORDS: [],
+
+  // Custom Domains (Overridden by domains.json if loaded)
+  DOMAINS: [],
+
+  // Specific Pages or Paths to block
+  PAGE_URLS: [
+    'reddit.com/r/nsfw',
+    'reddit.com/r/porn',
+    'twitter.com/search?q=porn',
+    'google.com/search?q=porn',
+    'bing.com/search?q=porn'
   ],
 
   GAMES: [

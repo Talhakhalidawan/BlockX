@@ -173,23 +173,32 @@
                     this.dimension.depth = this.targetBlock.dimension.depth;
                 }
 
-                if (overlap > 0) {
+                if (overlap > 0.1) {
                     let choppedDimensions = { width: this.dimension.width, height: this.dimension.height, depth: this
                             .dimension.depth };
                     choppedDimensions[this.workingDimension] -= overlap;
                     this.dimension[this.workingDimension] = overlap;
 
-                    let placedGeometry = new THREE.BoxGeometry(this.dimension.width, this.dimension.height, this
-                        .dimension.depth);
+                    let placedGeometry = new THREE.BoxGeometry(
+                        Math.max(0.1, this.dimension.width), 
+                        Math.max(0.1, this.dimension.height), 
+                        Math.max(0.1, this.dimension.depth)
+                    );
                     placedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(this.dimension.width / 2, this
                         .dimension.height / 2, this.dimension.depth / 2));
                     let placedMesh = new THREE.Mesh(placedGeometry, this.material);
 
-                    let choppedGeometry = new THREE.BoxGeometry(choppedDimensions.width, choppedDimensions.height,
-                        choppedDimensions.depth);
-                    choppedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(choppedDimensions.width / 2,
-                        choppedDimensions.height / 2, choppedDimensions.depth / 2));
-                    let choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
+                    let choppedMesh = null;
+                    if (choppedDimensions[this.workingDimension] > 0.1) {
+                        let choppedGeometry = new THREE.BoxGeometry(
+                            Math.max(0.1, choppedDimensions.width), 
+                            Math.max(0.1, choppedDimensions.height), 
+                            Math.max(0.1, choppedDimensions.depth)
+                        );
+                        choppedGeometry.applyMatrix(new THREE.Matrix4().makeTranslation(choppedDimensions.width / 2,
+                            choppedDimensions.height / 2, choppedDimensions.depth / 2));
+                        choppedMesh = new THREE.Mesh(choppedGeometry, this.material);
+                    }
 
                     let choppedPosition = {
                         x: this.position.x,
@@ -204,10 +213,12 @@
                     }
 
                     placedMesh.position.set(this.position.x, this.position.y, this.position.z);
-                    choppedMesh.position.set(choppedPosition.x, choppedPosition.y, choppedPosition.z);
+                    if (choppedMesh) {
+                        choppedMesh.position.set(choppedPosition.x, choppedPosition.y, choppedPosition.z);
+                    }
 
                     blocksToReturn.placed = placedMesh;
-                    if (!blocksToReturn.bonus) blocksToReturn.chopped = choppedMesh;
+                    if (!blocksToReturn.bonus && choppedMesh) blocksToReturn.chopped = choppedMesh;
                 } else {
                     this.state = this.STATES.MISSED;
                 }
@@ -318,9 +329,9 @@
                 let delayAmount = 0.02;
                 for (let i = 0; i < oldBlocks.length; i++) {
                     TweenLite.to(oldBlocks[i].scale, removeSpeed, {
-                        x: 0,
-                        y: 0,
-                        z: 0,
+                        x: 0.0001,
+                        y: 0.0001,
+                        z: 0.0001,
                         delay: (oldBlocks.length - i) * delayAmount,
                         ease: Power1.easeIn,
                         onComplete: () => this.placedBlocks.remove(oldBlocks[i])
