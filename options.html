@@ -159,24 +159,32 @@
                     </div>
                 </div>
 
-                <!-- Keywords Section -->
-                <div id="section-keywords" class="settings-section">
+                <!-- Security Section -->
+                <div id="section-security" class="settings-section">
                     <div class="settings-group">
                         <div class="group-header">
-                            <h3>Pattern Filtering</h3>
-                            <p>Block access if the URL or page title matches these specific patterns.</p>
+                            <h3>Dashboard Protection</h3>
+                            <p>Prevent unauthorized access to your blocking configuration.</p>
                         </div>
                         
-                        <div class="interactive-list-manager">
-                            <div class="input-row">
-                                <input type="text" id="keyword-input" placeholder="Add new keyword (e.g. addictive-site)">
-                                <button id="add-keyword-btn" class="btn btn-secondary">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    Add
-                                </button>
+                        <div class="security-card">
+                            <div class="security-row">
+                                <div class="security-info">
+                                    <span class="title">Password Protection</span>
+                                    <span class="desc">Require a password to open this settings page.</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="security-toggle">
+                                    <span class="slider round"></span>
+                                </label>
                             </div>
-                            <div id="keyword-list" class="tag-cloud">
-                                <!-- Populated by JS -->
+
+                            <div id="password-management" class="password-setup-box hidden">
+                                <div class="input-row">
+                                    <input type="password" id="new-password" placeholder="Enter new password">
+                                    <button id="set-password-btn" class="btn btn-primary">Update Password</button>
+                                </div>
+                                <p class="help-text">Choose a strong password. If you forget it, you will need to re-install the extension.</p>
                             </div>
                         </div>
                     </div>
@@ -188,6 +196,23 @@
                 <span id="toast-text">Changes synced across system.</span>
             </div>
         </main>
+
+        <!-- Security Gateway Overlay -->
+        <div id="security-gateway" class="gateway-overlay hidden">
+            <div class="gateway-card">
+                <div class="gateway-brand">
+                    <img src="icons/icon128.png" alt="BlockX Logo" class="gateway-logo">
+                </div>
+                <h2 id="gateway-title">Dashboard Locked</h2>
+                <p id="gateway-desc">Please enter your password to continue.</p>
+                
+                <div id="gateway-input-group" class="gateway-input-group">
+                    <input type="password" id="gateway-password" placeholder="Password">
+                    <button id="gateway-unlock-btn" class="btn btn-primary">Unlock</button>
+                </div>
+                <div id="gateway-error" class="error-msg hidden">Incorrect password.</div>
+            </div>
+        </div>
     </div>
     <script src="config.js"></script>
     <script src="options.js"></script>

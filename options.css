@@ -231,7 +231,7 @@ body {
     gap: 12px;
 }
 
-#keyword-input, #domain-input {
+#keyword-input, #domain-input, #new-password {
     flex: 1;
     padding: 12px 16px;
     border: 1px solid var(--border-base);
@@ -241,7 +241,7 @@ body {
     transition: border-color 0.2s;
 }
 
-#keyword-input:focus, #domain-input:focus {
+#keyword-input:focus, #domain-input:focus, #new-password:focus {
     outline: none;
     border-color: var(--accent);
 }
@@ -305,6 +305,156 @@ body {
     width: 12px;
     height: 12px;
 }
+
+/* Security Card & Toggle */
+.security-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.security-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.security-info .title {
+    display: block;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.security-info .desc {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.password-setup-box {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-light);
+    animation: fadeIn 0.3s ease;
+}
+
+/* Switch Component */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider { background-color: var(--accent); }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* Gateway Overlay */
+.gateway-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: var(--bg-app);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.gateway-card {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+    max-width: 360px;
+    width: 90%;
+    border: 1px solid var(--border-base);
+    animation: gatewayPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes gatewayPop {
+    from { transform: scale(0.98); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.gateway-brand {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+}
+
+.gateway-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.gateway-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
+.gateway-card p { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+
+.gateway-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#gateway-password {
+    height: 42px;
+    padding: 0 16px;
+    border: 1px solid var(--border-base);
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+#gateway-password:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+#gateway-unlock-btn {
+    height: 42px;
+    font-size: 14px;
+    justify-content: center;
+    border-radius: 10px;
+}
+
+.error-msg {
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 16px;
+}
+
+.hidden { display: none !important; }
 
 /* Settings Sections */
 .workspace-content {

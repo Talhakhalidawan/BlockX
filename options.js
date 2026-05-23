@@ -4,41 +4,117 @@ const sections = {
     general: { title: "General Settings", subtitle: "Configure your core protection parameters." },
     lists: { title: "Domain Management", subtitle: "Manage the database of restricted hostnames." },
     keywords: { title: "Content Filtering", subtitle: "Define patterns to block based on page content." },
-    security: { title: "Security & Privacy", subtitle: "Protect your configuration and manage keys." }
+    security: { title: "Security Protection", subtitle: "Secure your configuration with a dashboard password." }
 };
 
 let state = {
     BLOCK_METHOD: 'blocked_page',
     CUSTOM_DOMAINS: [],
     CUSTOM_KEYWORDS: [],
-    ACTIVE_GAME_INDEX: -1
+    ACTIVE_GAME_INDEX: -1,
+    SECURITY_ENABLED: false,
+    PASSWORD: ''
 };
 
 async function init() {
     await loadConfig();
+    await restore_options();
     
-    // 1. Setup Static UI & Listeners first
+    // Check security status before showing dashboard
+    handleSecurityGateway();
+
     setupNavigation();
     setupEnforcementCards();
+    setupSecurityLogic();
     
-    // 2. Populate dynamic elements (Games) so they exist in the DOM
-    populateGames();
-    
-    // 3. Setup List Managers
+    // Initialize List Managers
     setupListManager('domain-input', 'add-domain-btn', 'domain-list', 'CUSTOM_DOMAINS');
     setupListManager('keyword-input', 'add-keyword-btn', 'keyword-list', 'CUSTOM_KEYWORDS');
     
-    // 4. Finally restore stored options (now that listeners and elements are ready)
-    await restore_options();
+    populateGames();
 
-    // Initial render of lists (List Managers do this, but just to be sure)
     renderList('domain-list', 'CUSTOM_DOMAINS');
     renderList('keyword-list', 'CUSTOM_KEYWORDS');
 }
 
 /**
- * Persists current state to chrome.storage.local
+ * Handles the locking/unlocking logic for the security gateway
  */
+function handleSecurityGateway() {
+    const gateway = document.getElementById('security-gateway');
+    const title = document.getElementById('gateway-title');
+    const desc = document.getElementById('gateway-desc');
+    const unlockBtn = document.getElementById('gateway-unlock-btn');
+    const passInput = document.getElementById('gateway-password');
+    const errorMsg = document.getElementById('gateway-error');
+
+    if (!state.SECURITY_ENABLED) {
+        gateway.classList.add('hidden');
+        return;
+    }
+
+    // If no password set but security "enabled" (initial state), prompt to set
+    if (!state.PASSWORD) {
+        title.textContent = "Setup Security";
+        desc.textContent = "Please set an initial password for your dashboard.";
+        unlockBtn.textContent = "Set & Unlock";
+    }
+
+    gateway.classList.remove('hidden');
+
+    const attemptUnlock = () => {
+        const input = passInput.value;
+        if (!state.PASSWORD) {
+            // Setup mode
+            if (input.length < 1) return;
+            state.PASSWORD = input;
+            saveState();
+            gateway.classList.add('hidden');
+        } else if (input === state.PASSWORD) {
+            // Normal unlock
+            gateway.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+        } else {
+            errorMsg.classList.remove('hidden');
+        }
+    };
+
+    unlockBtn.addEventListener('click', attemptUnlock);
+    passInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') attemptUnlock();
+    });
+}
+
+function setupSecurityLogic() {
+    const toggle = document.getElementById('security-toggle');
+    const setupBox = document.getElementById('password-management');
+    const updateBtn = document.getElementById('set-password-btn');
+    const newPassInput = document.getElementById('new-password');
+
+    toggle.checked = state.SECURITY_ENABLED;
+    if (state.SECURITY_ENABLED) setupBox.classList.remove('hidden');
+
+    toggle.addEventListener('change', () => {
+        state.SECURITY_ENABLED = toggle.checked;
+        if (state.SECURITY_ENABLED) {
+            setupBox.classList.remove('hidden');
+        } else {
+            setupBox.classList.add('hidden');
+        }
+        saveState();
+    });
+
+    updateBtn.addEventListener('click', () => {
+        const pass = newPassInput.value;
+        if (pass) {
+            state.PASSWORD = pass;
+            saveState();
+            showToast('Password updated successfully.');
+            newPassInput.value = '';
+        }
+    });
+}
+
 function saveState() {
     const activeGameRadio = document.querySelector('input[name="activeGame"]:checked');
     state.ACTIVE_GAME_INDEX = activeGameRadio ? parseInt(activeGameRadio.value) : -1;
@@ -47,7 +123,9 @@ function saveState() {
         BLOCK_METHOD: state.BLOCK_METHOD,
         CUSTOM_DOMAINS: state.CUSTOM_DOMAINS,
         CUSTOM_KEYWORDS: state.CUSTOM_KEYWORDS,
-        ACTIVE_GAME_INDEX: state.ACTIVE_GAME_INDEX
+        ACTIVE_GAME_INDEX: state.ACTIVE_GAME_INDEX,
+        SECURITY_ENABLED: state.SECURITY_ENABLED,
+        PASSWORD: state.PASSWORD
     }, () => {
         if (!chrome.runtime.lastError) {
             showToast('Settings auto-saved.');
@@ -55,9 +133,6 @@ function saveState() {
     });
 }
 
-/**
- * Handles sidebar navigation
- */
 function setupNavigation() {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
@@ -77,9 +152,6 @@ function setupNavigation() {
     });
 }
 
-/**
- * Updates the visibility of the Hub Experience section
- */
 function updateHubVisibility(method) {
     const gameSection = document.getElementById('game-selection');
     if (method === 'blocked_page') {
@@ -89,26 +161,21 @@ function updateHubVisibility(method) {
     }
 }
 
-/**
- * Handles block method card selection
- */
 function setupEnforcementCards() {
     const inputs = document.querySelectorAll('input[name="blockMethod"]');
     inputs.forEach(input => {
         input.addEventListener('change', () => {
             state.BLOCK_METHOD = input.value;
             updateHubVisibility(input.value);
-            saveState(); // Auto-save
+            saveState();
         });
     });
 }
 
-/**
- * Generic list manager for Domains and Keywords
- */
 function setupListManager(inputId, btnId, listId, stateKey) {
     const input = document.getElementById(inputId);
     const btn = document.getElementById(btnId);
+    if (!input || !btn) return;
 
     const addItem = () => {
         const val = input.value.trim().toLowerCase();
@@ -116,7 +183,7 @@ function setupListManager(inputId, btnId, listId, stateKey) {
             state[stateKey].push(val);
             renderList(listId, stateKey);
             input.value = '';
-            saveState(); // Auto-save
+            saveState();
         }
     };
 
@@ -143,14 +210,13 @@ function renderList(listId, stateKey) {
         container.appendChild(el);
     });
 
-    // Re-attach delete listeners
     container.querySelectorAll('.tag-delete').forEach(btn => {
         btn.addEventListener('click', () => {
             const key = btn.getAttribute('data-key');
             const idx = parseInt(btn.getAttribute('data-index'));
             state[key].splice(idx, 1);
             renderList(listId, key);
-            saveState(); // Auto-save
+            saveState();
         });
     });
 }
@@ -187,18 +253,18 @@ async function restore_options() {
             BLOCK_METHOD: 'blocked_page',
             CUSTOM_DOMAINS: [],
             CUSTOM_KEYWORDS: [],
-            ACTIVE_GAME_INDEX: -1
+            ACTIVE_GAME_INDEX: -1,
+            SECURITY_ENABLED: false,
+            PASSWORD: ''
         }, (items) => {
             state = items;
 
-            // Restore Block Method UI
             const methodInput = document.querySelector(`input[name="blockMethod"][value="${state.BLOCK_METHOD}"]`);
             if (methodInput) {
                 methodInput.checked = true;
                 updateHubVisibility(state.BLOCK_METHOD);
             }
 
-            // Restore Active Game
             const gameRadio = document.querySelector(`input[name="activeGame"][value="${state.ACTIVE_GAME_INDEX}"]`);
             if (gameRadio) gameRadio.checked = true;
 
@@ -211,10 +277,8 @@ function showToast(msg) {
     const toast = document.getElementById('toast');
     const toastText = document.getElementById('toast-text');
     if (!toast || !toastText) return;
-    
     toastText.textContent = msg;
     toast.classList.add('show');
-    
     if (window.toastTimeout) clearTimeout(window.toastTimeout);
     window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
 }
