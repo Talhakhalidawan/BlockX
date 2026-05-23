@@ -16,17 +16,22 @@ let state = {
 
 async function init() {
     await loadConfig();
-    await restore_options();
+    
+    // 1. Setup Static UI & Listeners first
     setupNavigation();
     setupEnforcementCards();
     
-    // Initialize List Managers
+    // 2. Populate dynamic elements (Games) so they exist in the DOM
+    populateGames();
+    
+    // 3. Setup List Managers
     setupListManager('domain-input', 'add-domain-btn', 'domain-list', 'CUSTOM_DOMAINS');
     setupListManager('keyword-input', 'add-keyword-btn', 'keyword-list', 'CUSTOM_KEYWORDS');
     
-    populateGames();
+    // 4. Finally restore stored options (now that listeners and elements are ready)
+    await restore_options();
 
-    // Initial render of lists to ensure they show up after restore
+    // Initial render of lists (List Managers do this, but just to be sure)
     renderList('domain-list', 'CUSTOM_DOMAINS');
     renderList('keyword-list', 'CUSTOM_KEYWORDS');
 }
@@ -35,7 +40,6 @@ async function init() {
  * Persists current state to chrome.storage.local
  */
 function saveState() {
-    // Re-check game index just in case
     const activeGameRadio = document.querySelector('input[name="activeGame"]:checked');
     state.ACTIVE_GAME_INDEX = activeGameRadio ? parseInt(activeGameRadio.value) : -1;
 
@@ -74,6 +78,18 @@ function setupNavigation() {
 }
 
 /**
+ * Updates the visibility of the Hub Experience section
+ */
+function updateHubVisibility(method) {
+    const gameSection = document.getElementById('game-selection');
+    if (method === 'blocked_page') {
+        gameSection.classList.remove('hidden');
+    } else {
+        gameSection.classList.add('hidden');
+    }
+}
+
+/**
  * Handles block method card selection
  */
 function setupEnforcementCards() {
@@ -81,12 +97,7 @@ function setupEnforcementCards() {
     inputs.forEach(input => {
         input.addEventListener('change', () => {
             state.BLOCK_METHOD = input.value;
-            const gameSection = document.getElementById('game-selection');
-            if (input.value === 'blocked_page') {
-                gameSection.classList.remove('hidden');
-            } else {
-                gameSection.classList.add('hidden');
-            }
+            updateHubVisibility(input.value);
             saveState(); // Auto-save
         });
     });
@@ -113,12 +124,11 @@ function setupListManager(inputId, btnId, listId, stateKey) {
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addItem();
     });
-
-    renderList(listId, stateKey);
 }
 
 function renderList(listId, stateKey) {
     const container = document.getElementById(listId);
+    if (!container) return;
     container.innerHTML = '';
     
     state[stateKey].forEach((item, index) => {
@@ -147,9 +157,9 @@ function renderList(listId, stateKey) {
 
 function populateGames() {
     const gameList = document.getElementById('game-list');
+    if (!gameList) return;
     gameList.innerHTML = '';
 
-    // Add Random option listener manually since it's hardcoded in HTML
     const randomRadio = document.querySelector('input[name="activeGame"][value="-1"]');
     if (randomRadio) {
         randomRadio.addEventListener('change', saveState);
@@ -159,14 +169,14 @@ function populateGames() {
         const label = document.createElement('label');
         label.className = 'hub-item';
         label.innerHTML = `
-            <input type="radio" name="activeGame" value="${index}" class="sr-only" ${state.ACTIVE_GAME_INDEX === index ? 'checked' : ''}>
+            <input type="radio" name="activeGame" value="${index}" class="sr-only">
             <div class="hub-item-box">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 7 5 5-5 5"></path><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
                 <span>${game.name}</span>
             </div>
         `;
         const radio = label.querySelector('input');
-        radio.addEventListener('change', saveState); // Auto-save on change
+        radio.addEventListener('change', saveState);
         gameList.appendChild(label);
     });
 }
@@ -179,19 +189,18 @@ async function restore_options() {
             CUSTOM_KEYWORDS: [],
             ACTIVE_GAME_INDEX: -1
         }, (items) => {
-            state = {
-                BLOCK_METHOD: items.BLOCK_METHOD,
-                CUSTOM_DOMAINS: items.CUSTOM_DOMAINS,
-                CUSTOM_KEYWORDS: items.CUSTOM_KEYWORDS,
-                ACTIVE_GAME_INDEX: items.ACTIVE_GAME_INDEX
-            };
+            state = items;
 
             // Restore Block Method UI
             const methodInput = document.querySelector(`input[name="blockMethod"][value="${state.BLOCK_METHOD}"]`);
             if (methodInput) {
                 methodInput.checked = true;
-                methodInput.dispatchEvent(new Event('change', { bubbles: false }));
+                updateHubVisibility(state.BLOCK_METHOD);
             }
+
+            // Restore Active Game
+            const gameRadio = document.querySelector(`input[name="activeGame"][value="${state.ACTIVE_GAME_INDEX}"]`);
+            if (gameRadio) gameRadio.checked = true;
 
             resolve();
         });
@@ -201,10 +210,11 @@ async function restore_options() {
 function showToast(msg) {
     const toast = document.getElementById('toast');
     const toastText = document.getElementById('toast-text');
+    if (!toast || !toastText) return;
+    
     toastText.textContent = msg;
     toast.classList.add('show');
     
-    // Hide after 2 seconds for a snappier auto-save feel
     if (window.toastTimeout) clearTimeout(window.toastTimeout);
     window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
 }
