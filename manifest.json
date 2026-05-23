@@ -1,11 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "PureShield Adult Filter",
+  "name": "Site Error",
   "version": "1.0",
-  "description": "Zero-lag network level SafeSearch locking and title keyword blocker.",
+  "description": "Network configuration and site management tool.",
   "permissions": [
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "tabs",
+    "storage"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "host_permissions": [
     "<all_urls>"
   ],
@@ -27,14 +33,19 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["config.js", "content.js"],
       "run_at": "document_start",
       "all_frames": true
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["blocked.html"],
+      "resources": [
+        "blocked.html",
+        "config.js",
+        "blocked-pages/*",
+        "lib/*"
+      ],
       "matches": ["<all_urls>"]
     }
   ]
