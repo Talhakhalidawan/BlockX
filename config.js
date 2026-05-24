@@ -47,6 +47,31 @@ async function loadConfig() {
   });
 }
 
+/**
+ * Escapes regex special characters.
+ */
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Creates a single optimized RegExp from an array of keywords.
+ * Big O: O(N) where N is text length during search, instead of O(N*K).
+ */
+function createOptimizedFilter(keywords) {
+  if (!keywords || keywords.length === 0) return null;
+  // Filter out short/empty keywords to prevent over-blocking
+  const validKeywords = keywords
+    .map(kw => kw.trim().toLowerCase())
+    .filter(kw => kw.length >= 3);
+  
+  if (validKeywords.length === 0) return null;
+  
+  // Combine into a single alternation: (word1|word2|word3)
+  const pattern = validKeywords.map(escapeRegExp).join('|');
+  return new RegExp(pattern, 'i');
+}
+
 function getBlockUrl(method, hostname, extensionUrl) {
   if (method === 'blocked_page' && CONFIG.SHOW_GAME_INSTANTLY && CONFIG.GAMES.length > 0) {
     let gameIndex = CONFIG.ACTIVE_GAME_INDEX;

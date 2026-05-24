@@ -37,6 +37,11 @@
         "id": "ruleset_safesearch",
         "enabled": true,
         "path": "rules.json"
+      },
+      {
+        "id": "ruleset_blocklist",
+        "enabled": true,
+        "path": "blocklist_rules.json"
       }
     ]
   },

@@ -258,7 +258,7 @@
                 this.scoreContainer = document.getElementById('score');
                 this.startButton = document.getElementById('start-button');
                 this.instructions = document.getElementById('instructions');
-                this.scoreContainer.innerHTML = '0';
+                this.scoreContainer.textContent = '0';
 
                 this.newBlocks = new THREE.Group();
                 this.placedBlocks = new THREE.Group();
@@ -315,7 +315,7 @@
 
             startGame() {
                 if (this.state != this.STATES.PLAYING) {
-                    this.scoreContainer.innerHTML = '0';
+                    this.scoreContainer.textContent = '0';
                     this.updateState(this.STATES.PLAYING);
                     this.addBlock();
                 }
@@ -349,7 +349,7 @@
                 TweenLite.to(countdown, cameraMoveSpeed, {
                     value: 0,
                     onUpdate: () => {
-                        this.scoreContainer.innerHTML = String(Math.round(countdown.value));
+                        this.scoreContainer.textContent = String(Math.round(countdown.value));
                     }
                 });
 
@@ -400,7 +400,7 @@
                     return this.endGame();
                 }
 
-                this.scoreContainer.innerHTML = String(this.blocks.length - 1);
+                this.scoreContainer.textContent = String(this.blocks.length - 1);
 
                 let newKidOnTheBlock = new Block(lastBlock);
                 this.newBlocks.add(newKidOnTheBlock.mesh);

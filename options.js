@@ -284,12 +284,37 @@ function renderList(listId, stateKey) {
     state[stateKey].forEach((item, index) => {
         const el = document.createElement('div');
         el.className = 'tag-item';
-        el.innerHTML = `
-            <span>${item}</span>
-            <div class="tag-delete" data-key="${stateKey}" data-index="${index}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </div>
-        `;
+        
+        const span = document.createElement('span');
+        span.textContent = item;
+        el.appendChild(span);
+
+        const deleteBtn = document.createElement('div');
+        deleteBtn.className = 'tag-delete';
+        deleteBtn.setAttribute('data-key', stateKey);
+        deleteBtn.setAttribute('data-index', index);
+        
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2.5');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        
+        const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line1.setAttribute('x1', '18'); line1.setAttribute('y1', '6');
+        line1.setAttribute('x2', '6'); line1.setAttribute('y2', '18');
+        
+        const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line2.setAttribute('x1', '6'); line2.setAttribute('y1', '6');
+        line2.setAttribute('x2', '18'); line2.setAttribute('y2', '18');
+        
+        svg.appendChild(line1);
+        svg.appendChild(line2);
+        deleteBtn.appendChild(svg);
+        el.appendChild(deleteBtn);
+        
         container.appendChild(el);
     });
 
@@ -317,18 +342,49 @@ function populateGames() {
     CONFIG.GAMES.forEach((game, index) => {
         const label = document.createElement('label');
         label.className = 'hub-item';
-        label.innerHTML = `
-            <input type="radio" name="activeGame" value="${index}" class="sr-only">
-            <div class="hub-item-box">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 7 5 5-5 5"></path><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg>
-                <span>${game.name}</span>
-            </div>
-        `;
-        const radio = label.querySelector('input');
-        if (radio) radio.addEventListener('change', saveState);
+        
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'activeGame';
+        input.value = index;
+        input.className = 'sr-only';
+        if (state.ACTIVE_GAME_INDEX === index) input.checked = true;
+        input.addEventListener('change', saveState);
+
+        const box = document.createElement('div');
+        box.className = 'hub-item-box';
+        
+        // Create SVG icon
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('icon');   // <-- FIXED: was svg.className.setNamedItem(…)
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'm10 7 5 5-5 5');
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('d', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10');
+        
+        svg.appendChild(path1);
+        svg.appendChild(path2);
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = game.name;
+        
+        box.appendChild(svg);
+        box.appendChild(nameSpan);
+        
+        label.appendChild(input);
+        label.appendChild(box);
+        
         gameList.appendChild(label);
     });
 }
+
 
 async function restore_options() {
     return new Promise((resolve) => {
