@@ -46,6 +46,9 @@ async function init() {
 
     // 4. Prevention: Tamper-proof the gateway
     monitorGatewayTampering();
+
+    // 5. Setup Import/Export Listeners
+    setupBackupListeners();
 }
 
 /**
@@ -440,6 +443,89 @@ function showToast(msg) {
     toast.classList.add('show');
     if (window.toastTimeout) clearTimeout(window.toastTimeout);
     window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+function setupBackupListeners() {
+    const exportBtn = document.getElementById("export-btn");
+    const importFile = document.getElementById("import-file");
+
+    if (exportBtn) {
+        exportBtn.addEventListener("click", exportSettings);
+    }
+    if (importFile) {
+        importFile.addEventListener("change", handleImport);
+    }
+}
+
+function exportSettings() {
+    chrome.storage.local.get([
+        "BLOCK_METHOD",
+        "CUSTOM_DOMAINS",
+        "CUSTOM_KEYWORDS",
+        "ACTIVE_GAME_INDEX",
+        "SECURITY_ENABLED",
+        "PASSWORD",
+        "THEME"
+    ], (items) => {
+        const backupData = {
+            version: "1.0",
+            timestamp: new Date().toISOString(),
+            settings: items
+        };
+
+        const jsonString = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `elite_shield_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast("Settings exported successfully!");
+    });
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data || !data.settings) {
+                showToast("Invalid backup file format!");
+                return;
+            }
+
+            const imported = data.settings;
+            const updates = {
+                BLOCK_METHOD: imported.BLOCK_METHOD || "blocked_page",
+                CUSTOM_DOMAINS: Array.isArray(imported.CUSTOM_DOMAINS) ? imported.CUSTOM_DOMAINS : [],
+                CUSTOM_KEYWORDS: Array.isArray(imported.CUSTOM_KEYWORDS) ? imported.CUSTOM_KEYWORDS : [],
+                ACTIVE_GAME_INDEX: typeof imported.ACTIVE_GAME_INDEX === 'number' ? imported.ACTIVE_GAME_INDEX : -1,
+                SECURITY_ENABLED: !!imported.SECURITY_ENABLED,
+                PASSWORD: imported.PASSWORD || "",
+                THEME: imported.THEME || "system"
+            };
+
+            chrome.storage.local.set(updates, () => {
+                showToast("Settings imported successfully! Reloading...");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            });
+        } catch (err) {
+            showToast("Failed to parse backup file!");
+            console.error("Import error:", err);
+        }
+    };
+    reader.readAsText(file);
 }
 
 document.addEventListener('DOMContentLoaded', init);

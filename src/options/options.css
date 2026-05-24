@@ -462,3 +462,48 @@ input:checked + .slider:before { transform: translateX(20px); }
 .toast-notification .icon { width: 18px; height: 18px; color: var(--accent); }
 
 .hidden { display: none !important; }
+
+/* Backup Action Group */
+.backup-action-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-app);
+    border: 1px solid var(--border-base);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.backup-text-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: all 0.15s ease;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.backup-text-btn:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.backup-text-btn .icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.5px;
+}
+
+.backup-divider {
+    color: var(--border-base);
+    font-size: 13px;
+    user-select: none;
+    padding: 0 4px;
+}
