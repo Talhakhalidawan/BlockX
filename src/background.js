@@ -317,3 +317,27 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
   }
 });
+
+chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+  if (details.frameId !== 0) return; // Target main frame only
+  const url = details.url;
+  
+  if (url.startsWith('chrome-extension://') || url.startsWith('chrome://') || url.startsWith('about:')) {
+    return;
+  }
+
+  const config = await loadConfig();
+  if (config.BLOCK_METHOD === 'none') return;
+
+  if (shouldBlockUrl(url, config)) {
+    console.log(`[BlockX] Intercepted blocked URL via onBeforeNavigate: ${url}`);
+    try {
+      const parsedUrl = new URL(url);
+      const targetUrl = getBlockUrl(config.BLOCK_METHOD, parsedUrl.hostname);
+      chrome.tabs.update(details.tabId, { url: targetUrl });
+    } catch (err) {
+      const targetUrl = getBlockUrl(config.BLOCK_METHOD, '');
+      chrome.tabs.update(details.tabId, { url: targetUrl });
+    }
+  }
+});

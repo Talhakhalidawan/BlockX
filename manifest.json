@@ -6,7 +6,8 @@
   "permissions": [
     "declarativeNetRequest",
     "tabs",
-    "storage"
+    "storage",
+    "webNavigation"
   ],
   "background": {
     "service_worker": "src/background.js"
@@ -36,11 +37,6 @@
         "id": "ruleset_safesearch",
         "enabled": true,
         "path": "assets/data/rules.json"
-      },
-      {
-        "id": "ruleset_blocklist",
-        "enabled": true,
-        "path": "assets/data/blocklist_rules.json"
       }
     ]
   },
