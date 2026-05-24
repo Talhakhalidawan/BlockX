@@ -4,13 +4,15 @@ importScripts('config.js');
 const DYNAMIC_RULE_LIMIT = chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES || 5000;
 
 // ------------------------------------------------------------------
-// ULTRA-FAST DOMAIN LOOKUP (Binary search on binary file)
+// ULTRA-FAST DOMAIN LOOKUP (Binary search on binary file with precomputed offsets)
 // ------------------------------------------------------------------
 
 /** Sorted domain list loaded as a raw ArrayBuffer. */
 let domainBuffer = null;
 /** Number of domains stored in the buffer. */
 let domainCount = 0;
+/** Precomputed offsets to achieve O(1) random access in variable-width binary strings. */
+let domainOffsets = [];
 
 /**
  * Loads the binary domain file and stores it for binary search.
@@ -20,44 +22,45 @@ async function loadMasterDomainList() {
   try {
     const resp = await fetch(chrome.runtime.getURL('assets/data/domains.bin'));
     domainBuffer = await resp.arrayBuffer();
-    // Calculate number of entries: we'll count while searching anyway,
-    // but we can pre‑calculate the number by scanning once (only done once).
+    
+    // Precompute offsets for true O(1) string retrieval
     let offset = 0;
     const view = new DataView(domainBuffer);
+    const tempOffsets = [];
+    
     while (offset < domainBuffer.byteLength) {
+      tempOffsets.push(offset);
       const len = view.getUint16(offset);  // big-endian
       offset += 2 + len;
-      domainCount++;
     }
-    console.log(`[BlockX] Binary domain list loaded: ${domainCount} entries`);
+    
+    domainOffsets = tempOffsets;
+    domainCount = domainOffsets.length;
+    console.log(`[BlockX] Optimized binary domain list loaded: ${domainCount} entries`);
   } catch (e) {
     console.error('[BlockX] Failed to load binary domain file:', e);
     domainBuffer = null;
     domainCount = 0;
+    domainOffsets = [];
   }
 }
 
 /**
- * Reads a domain at a specific index (0‑based) from the binary buffer.
+ * Reads a domain at a specific index (0‑based) from the binary buffer in O(1) time.
  * @param {number} index
  * @returns {string} domain in lowercase, or null if out of range
  */
 function readDomainAt(index) {
   if (!domainBuffer || index >= domainCount) return null;
+  const offset = domainOffsets[index];
   const view = new DataView(domainBuffer);
-  let offset = 0;
-  for (let i = 0; i < index; i++) {
-    const len = view.getUint16(offset);
-    offset += 2 + len;
-    if (offset > domainBuffer.byteLength) return null;
-  }
   const len = view.getUint16(offset);
   const bytes = new Uint8Array(domainBuffer, offset + 2, len);
   return new TextDecoder().decode(bytes);
 }
 
 /**
- * Binary search for a domain in the master list.
+ * Binary search for a domain in the master list in O(log N) time.
  * @param {string} domain – normalised domain (lowercase, no www.)
  * @returns {boolean}
  */
@@ -105,7 +108,8 @@ async function updateBlockingRules() {
     }
 
     const rules = [];
-    let ruleId = 1;
+    // Start dynamic rules from ID 10000 to prevent collisions with static rulesets!
+    let ruleId = 10000;
 
     const action = (() => {
       switch (config.BLOCK_METHOD) {
@@ -160,7 +164,7 @@ async function updateBlockingRules() {
     [...new Set(config.KEYWORDS)].forEach(k => addRule(9, k));
     config.PAGE_URLS.forEach(p => addRule(8, p));
 
-    console.log(`[BlockX] Applying ${rules.length}/${DYNAMIC_RULE_LIMIT} dynamic user rules.`);
+    console.log(`[BlockX] Applying ${rules.length}/${DYNAMIC_RULE_LIMIT} dynamic user rules starting at ID 10000.`);
 
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: oldRuleIds,
@@ -186,20 +190,36 @@ chrome.runtime.onStartup.addListener(() => {
   updateBlockingRules();
 });
 
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.CUSTOM_DOMAINS || changes.CUSTOM_KEYWORDS || changes.BLOCK_METHOD)) {
-    updateBlockingRules();
+chrome.storage.onChanged.addListener(async (changes, area) => {
+  if (area === 'local') {
+    const shouldUpdate = [
+      'CUSTOM_DOMAINS',
+      'CUSTOM_KEYWORDS',
+      'BLOCK_METHOD',
+      'ACTIVE_GAME_INDEX'
+    ].some(key => changes[key] !== undefined);
+
+    if (shouldUpdate) {
+      console.log("[BlockX] Storage config changed. Re-synchronizing rules...");
+      await updateBlockingRules();
+    }
   }
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getConfig') {
-    sendResponse({ config: CONFIG });
+    loadConfig().then(() => {
+      sendResponse({ config: CONFIG });
+    });
+    return true; // Keep message channel open for asynchronous reply
   }
   if (request.action === 'triggerBlock' && sender.tab) {
-    const url = new URL(sender.tab.url);
-    const targetUrl = getBlockUrl(CONFIG.BLOCK_METHOD, url.hostname);
-    chrome.tabs.update(sender.tab.id, { url: targetUrl });
+    loadConfig().then(() => {
+      const url = new URL(sender.tab.url);
+      const targetUrl = getBlockUrl(CONFIG.BLOCK_METHOD, url.hostname);
+      chrome.tabs.update(sender.tab.id, { url: targetUrl });
+    });
+    return true; // Keep message channel open for asynchronous reply
   }
   if (request.action === 'isMasterBlocked') {
     const domain = request.domain?.toLowerCase().replace(/^www\./, '');

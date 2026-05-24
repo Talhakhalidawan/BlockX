@@ -5,7 +5,6 @@
   "description": "Network configuration and site management tool.",
   "permissions": [
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
     "tabs",
     "storage"
   ],
