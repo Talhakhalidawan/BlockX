@@ -42,9 +42,10 @@ async function detectContext() {
         }
     }
 
-    // 3. Default: Domain
-    currentContext = { type: 'domain', value: domain };
-    document.getElementById('display-name').textContent = domain;
+    // 3. Default: Domain (strip leading www.)
+    const cleanDomain = domain.replace(/^www\./i, '');
+    currentContext = { type: 'domain', value: cleanDomain };
+    document.getElementById('display-name').textContent = cleanDomain;
     document.getElementById('context-type').textContent = 'Domain';
     document.getElementById('block-type-label').textContent = 'Site';
 }
@@ -118,12 +119,42 @@ function setupListeners() {
 function saveQuickAdd() {
     const input = document.getElementById('quick-input');
     if (!input) return;
-    const rawVal = input.value.trim().toLowerCase();
+    let rawVal = input.value.trim().toLowerCase();
     if (!rawVal) return;
 
     // Simple auto-detection: if it contains a dot and doesn't have spaces, it's likely a domain
     const isDomain = rawVal.includes('.') && !rawVal.includes(' ');
     const storageKey = isDomain ? 'CUSTOM_DOMAINS' : 'CUSTOM_KEYWORDS';
+
+    if (isDomain) {
+        // Sanitization
+        let cleanVal = rawVal;
+        let urlToParse = cleanVal;
+        if (!/^https?:\/\//i.test(cleanVal)) {
+            urlToParse = 'http://' + cleanVal;
+        }
+        try {
+            const parsed = new URL(urlToParse);
+            cleanVal = parsed.hostname;
+        } catch (e) {
+            cleanVal = cleanVal.split('/')[0];
+        }
+        
+        // Strip www.
+        cleanVal = cleanVal.replace(/^www\./i, '');
+
+        // Validation: Must be a valid domain with TLD and no spaces/special characters
+        const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9-]{2,})+$/;
+        if (!domainPattern.test(cleanVal)) {
+            input.value = '';
+            input.placeholder = "Invalid domain format!";
+            setTimeout(() => {
+                input.placeholder = "Enter domain or keyword...";
+            }, 2000);
+            return;
+        }
+        rawVal = cleanVal;
+    }
 
     chrome.storage.local.get({
         CUSTOM_DOMAINS: [],
@@ -140,6 +171,12 @@ function saveQuickAdd() {
                     if (toggleBtn) toggleBtn.click(); // close
                 }, 1000);
             });
+        } else {
+            input.value = '';
+            input.placeholder = "Already exists!";
+            setTimeout(() => {
+                input.placeholder = "Enter domain or keyword...";
+            }, 2000);
         }
     });
 }

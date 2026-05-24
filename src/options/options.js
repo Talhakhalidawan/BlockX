@@ -251,15 +251,33 @@ function setupListManager(inputId, btnId, listId, stateKey) {
         let val = input.value.trim().toLowerCase();
         if (!val) return;
 
-        // Domain Sanitization: strip https:// and paths
+        // Domain Sanitization & Strict Validation
         if (stateKey === 'CUSTOM_DOMAINS') {
+            let cleanVal = val;
+            
+            // Add a temporary protocol if not present to let the URL parser handle it reliably
+            let urlToParse = cleanVal;
+            if (!/^https?:\/\//i.test(cleanVal)) {
+                urlToParse = 'http://' + cleanVal;
+            }
+            
             try {
-                if (val.includes('://')) {
-                    val = new URL(val).hostname;
-                } else if (val.includes('/')) {
-                    val = val.split('/')[0];
-                }
-            } catch(e) {}
+                const parsed = new URL(urlToParse);
+                cleanVal = parsed.hostname;
+            } catch (e) {
+                cleanVal = cleanVal.split('/')[0];
+            }
+            
+            // Strip leading 'www.' if present (e.g., www.facebook.com -> facebook.com)
+            cleanVal = cleanVal.replace(/^www\./i, '');
+
+            // Strict domain check: must have a TLD extension and no spaces/special keywords
+            const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9-]{2,})+$/;
+            if (!domainPattern.test(cleanVal)) {
+                showToast("Invalid domain format! Must be e.g. facebook.com (not a keyword).");
+                return;
+            }
+            val = cleanVal;
         }
         
         if (val && !state[stateKey].includes(val)) {
