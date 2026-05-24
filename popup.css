@@ -1,13 +1,24 @@
 :root {
+    /* Light Mode */
     --accent: #1900FF;
-    --accent-soft: rgba(25, 0, 255, 0.05);
+    --accent-hover: #1100cc;
     --bg-main: #ffffff;
-    --bg-sub: #f9fafb;
-    --text-main: #111827;
-    --text-sub: #6b7280;
-    --border: #e5e7eb;
-    --radius: 12px;
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --bg-sub: #f8fafc;
+    --text-main: #0f172a;
+    --text-sub: #64748b;
+    --border: #e2e8f0;
+    --radius: 0px; /* Removing outer shell rounding as per user hint if shell removed */
+    --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main: #0f172a;
+        --bg-sub: #1e293b;
+        --text-main: #f8fafc;
+        --text-sub: #94a3b8;
+        --border: #334155;
+    }
 }
 
 body {
@@ -17,57 +28,67 @@ body {
     background: var(--bg-main);
     color: var(--text-main);
     -webkit-font-smoothing: antialiased;
+    overflow: hidden;
 }
 
 .popup-container {
     display: flex;
     flex-direction: column;
+    min-height: 200px;
 }
 
 /* Header */
 .popup-header {
-    padding: 16px 20px;
+    padding: 18px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border);
+    background: var(--bg-main);
 }
 
 .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .logo {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
 }
 
 .brand-name {
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: -0.02em;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.04em;
+    color: var(--text-main);
 }
 
 .icon-btn {
-    background: none;
-    border: none;
+    background: var(--bg-sub);
+    border: 1px solid var(--border);
     color: var(--text-sub);
     cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
+    padding: 8px;
+    border-radius: 10px;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon-btn:hover {
-    background: var(--bg-sub);
     color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-main);
+    transform: translateY(-1px);
 }
 
 .icon-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 /* Content */
@@ -76,48 +97,49 @@ body {
 }
 
 .context-card {
-    background: var(--bg-sub);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 }
 
 .site-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
     margin-bottom: 16px;
+    text-align: center;
 }
 
 .domain-text {
+    display: block;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 16px;
     word-break: break-all;
+    color: var(--text-main);
+    margin-bottom: 4px;
 }
 
 .type-badge {
-    font-size: 11px;
-    font-weight: 600;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-sub);
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 8px;
+    border-radius: 99px;
     letter-spacing: 0.05em;
 }
 
-/* Buttons */
+/* Primary Action Button */
 .btn {
     width: 100%;
-    height: 40px;
+    height: 46px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    border-radius: 8px;
-    font-weight: 600;
+    gap: 10px;
+    border-radius: 12px;
+    font-weight: 700;
     font-size: 14px;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-danger {
@@ -127,31 +149,39 @@ body {
 
 .btn-danger:hover {
     background: #dc2626;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(239, 68, 68, 0.4);
 }
 
 .btn-danger .icon {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
 }
 
+/* Secondary Toggle */
 .expand-btn {
     width: 100%;
     background: none;
     border: none;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: 8px 4px;
-    color: var(--accent);
+    gap: 8px;
+    padding: 12px 0;
+    color: var(--text-sub);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: color 0.2s;
+}
+
+.expand-btn:hover {
+    color: var(--accent);
 }
 
 .expand-btn .chevron {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     transition: transform 0.3s;
 }
 
@@ -161,12 +191,12 @@ body {
 
 /* Quick Add Panel */
 .quick-add-panel {
-    margin-top: 12px;
-    animation: slideDown 0.3s ease-out;
+    margin-top: 4px;
+    animation: fadeIn 0.3s ease-out;
 }
 
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -177,35 +207,38 @@ body {
 
 #quick-input {
     flex: 1;
-    height: 38px;
-    padding: 0 12px;
+    height: 42px;
+    padding: 0 16px;
     border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--bg-sub);
+    color: var(--text-main);
+    transition: all 0.2s;
 }
 
 #quick-input:focus {
     outline: none;
     border-color: var(--accent);
+    background: var(--bg-main);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 #quick-save-btn {
-    width: 60px;
-    height: 38px;
-    background: var(--accent);
-    color: white;
+    width: 64px;
+    height: 42px;
+    background: var(--text-main);
+    color: var(--bg-main);
+    border-radius: 10px;
 }
 
-.help-text {
-    font-size: 11px;
-    color: var(--text-sub);
-    margin: 8px 0 0;
-    padding-left: 2px;
+#quick-save-btn:hover {
+    opacity: 0.9;
 }
 
 /* Footer */
 .popup-footer {
-    padding: 12px 20px;
+    padding: 14px 20px;
     background: var(--bg-sub);
     border-top: 1px solid var(--border);
 }
@@ -213,28 +246,30 @@ body {
 .status {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-sub);
+    letter-spacing: 0.02em;
 }
 
 .dot {
     width: 6px;
     height: 6px;
-    background: var(--accent);
+    background: #22c55e; /* Use success green for status */
     border-radius: 50%;
 }
 
 .pulse {
     animation: pulse 2s infinite;
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 .hidden { display: none !important; }
-.btn-primary { background: var(--accent); color: white; }

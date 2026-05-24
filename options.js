@@ -13,13 +13,18 @@ let state = {
     CUSTOM_KEYWORDS: [],
     ACTIVE_GAME_INDEX: -1,
     SECURITY_ENABLED: false,
-    PASSWORD: ''
+    PASSWORD: '',
+    THEME: 'system' // 'light', 'dark', 'system'
 };
 
 async function init() {
     await loadConfig();
     await restore_options();
     
+    // 0. Apply Theme
+    applyTheme(state.THEME);
+    setupThemeSelector();
+
     // 1. Initial lock state
     if (state.SECURITY_ENABLED) {
         document.body.classList.add('is-locked');
@@ -155,6 +160,26 @@ function setupSecurityLogic() {
     }
 }
 
+function applyTheme(theme) {
+    state.THEME = theme;
+    document.body.setAttribute('data-user-theme', theme);
+    
+    // Update button active state
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
+    });
+}
+
+function setupThemeSelector() {
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = btn.getAttribute('data-theme');
+            applyTheme(theme);
+            saveState();
+        });
+    });
+}
+
 function saveState() {
     const activeGameRadio = document.querySelector('input[name="activeGame"]:checked');
     state.ACTIVE_GAME_INDEX = activeGameRadio ? parseInt(activeGameRadio.value) : -1;
@@ -165,7 +190,8 @@ function saveState() {
         CUSTOM_KEYWORDS: state.CUSTOM_KEYWORDS,
         ACTIVE_GAME_INDEX: state.ACTIVE_GAME_INDEX,
         SECURITY_ENABLED: state.SECURITY_ENABLED,
-        PASSWORD: state.PASSWORD
+        PASSWORD: state.PASSWORD,
+        THEME: state.THEME
     }, () => {
         if (!chrome.runtime.lastError) {
             showToast('Settings auto-saved.');
@@ -312,9 +338,11 @@ async function restore_options() {
             CUSTOM_KEYWORDS: [],
             ACTIVE_GAME_INDEX: -1,
             SECURITY_ENABLED: false,
-            PASSWORD: ''
+            PASSWORD: '',
+            THEME: 'system'
         }, (items) => {
             state = items;
+            applyTheme(state.THEME); // Re-apply theme after load
 
             const methodInput = document.querySelector(`input[name="blockMethod"][value="${state.BLOCK_METHOD}"]`);
             if (methodInput) {
