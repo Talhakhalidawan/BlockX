@@ -1,21 +1,7 @@
 # BlockX (Blocker)
 
 > **High-Performance Network Configuration & Site Management for Chrome**
->
-> BlockX enforces content filtering, search engine safety policies, and domain restrictions with near-zero resource overhead. It puts you in total control of your browsing environment.
-
----
-
-## Key Features
-
-| Feature | Description | Performance / Tech |
-| :--- | :--- | :--- |
-| **Protocol-Level Blocking** | Instantly restricts customized domains and keyword patterns before pages even load. | Zero-latency interception |
-| **Binary Search Lookup** | High-performance domain lookup optimized to **$O(\log N)$** operations. | Precomputed binary indexing files |
-| **Content Observer & Barrier** | Injects an instant CSS visibility barrier to prevent screen flashing. | Optimized regex filter |
-| **SafeSearch Enforcement** | Automatically enforces SafeSearch for Google, Bing, DuckDuckGo, Yahoo, and YouTube. | Strict query parameter injection |
-| **Interactive Block Hub** | Multiple customizable experiences: Interactive Hub (Tower Blocks & 3D Rubik's Cube), Connection Timeout, or Discreet Null. | Offline-enabled canvas games |
-| **Dashboard Security** | Protects settings panels using a secure local passcode gateway. | Secure local storage hashing |
+BlockX enforces content filtering, search engine safety policies, and domain restrictions with near-zero resource overhead. It puts you in total control of your browsing environment.
 
 ---
 
