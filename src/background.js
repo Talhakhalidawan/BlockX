@@ -1,0 +1,209 @@
+// background.js
+importScripts('config.js');
+
+const DYNAMIC_RULE_LIMIT = chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES || 5000;
+
+// ------------------------------------------------------------------
+// ULTRA-FAST DOMAIN LOOKUP (Binary search on binary file)
+// ------------------------------------------------------------------
+
+/** Sorted domain list loaded as a raw ArrayBuffer. */
+let domainBuffer = null;
+/** Number of domains stored in the buffer. */
+let domainCount = 0;
+
+/**
+ * Loads the binary domain file and stores it for binary search.
+ * The file format: [2-byte length][UTF-8 string]... repeated.
+ */
+async function loadMasterDomainList() {
+  try {
+    const resp = await fetch(chrome.runtime.getURL('assets/data/domains.bin'));
+    domainBuffer = await resp.arrayBuffer();
+    // Calculate number of entries: we'll count while searching anyway,
+    // but we can pre‑calculate the number by scanning once (only done once).
+    let offset = 0;
+    const view = new DataView(domainBuffer);
+    while (offset < domainBuffer.byteLength) {
+      const len = view.getUint16(offset);  // big-endian
+      offset += 2 + len;
+      domainCount++;
+    }
+    console.log(`[BlockX] Binary domain list loaded: ${domainCount} entries`);
+  } catch (e) {
+    console.error('[BlockX] Failed to load binary domain file:', e);
+    domainBuffer = null;
+    domainCount = 0;
+  }
+}
+
+/**
+ * Reads a domain at a specific index (0‑based) from the binary buffer.
+ * @param {number} index
+ * @returns {string} domain in lowercase, or null if out of range
+ */
+function readDomainAt(index) {
+  if (!domainBuffer || index >= domainCount) return null;
+  const view = new DataView(domainBuffer);
+  let offset = 0;
+  for (let i = 0; i < index; i++) {
+    const len = view.getUint16(offset);
+    offset += 2 + len;
+    if (offset > domainBuffer.byteLength) return null;
+  }
+  const len = view.getUint16(offset);
+  const bytes = new Uint8Array(domainBuffer, offset + 2, len);
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * Binary search for a domain in the master list.
+ * @param {string} domain – normalised domain (lowercase, no www.)
+ * @returns {boolean}
+ */
+function isMasterBlocked(domain) {
+  if (!domainBuffer || domainCount === 0) return false;
+  let low = 0;
+  let high = domainCount - 1;
+  while (low <= high) {
+    const mid = (low + high) >>> 1;
+    const midDomain = readDomainAt(mid);
+    if (midDomain === null) return false;
+    const cmp = domain.localeCompare(midDomain);
+    if (cmp === 0) return true;
+    else if (cmp < 0) high = mid - 1;
+    else low = mid + 1;
+  }
+  return false;
+}
+
+// ------------------------------------------------------------------
+// PUNYCODE HELPER (IDN → ASCII)
+// ------------------------------------------------------------------
+function toPunycode(domain) {
+  try {
+    return new URL('http://' + domain).hostname;
+  } catch {
+    return domain;
+  }
+}
+
+const isAscii = (str) => /^[\x00-\x7F]*$/.test(str);
+
+// ------------------------------------------------------------------
+// DNR RULES UPDATE (user‑defined only)
+// ------------------------------------------------------------------
+async function updateBlockingRules() {
+  try {
+    const config = await loadConfig();
+    const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const oldRuleIds = oldRules.map(rule => rule.id);
+
+    if (config.BLOCK_METHOD === 'none') {
+      await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds: oldRuleIds });
+      return;
+    }
+
+    const rules = [];
+    let ruleId = 1;
+
+    const action = (() => {
+      switch (config.BLOCK_METHOD) {
+        case 'infinite_hang':
+          return { type: 'redirect', redirect: { url: 'http://1.1.1.1:81' } };
+        case 'data_uri':
+          return { type: 'redirect', redirect: { url: 'data:text/plain,Blocked' } };
+        default:
+          if (config.SHOW_GAME_INSTANTLY && config.GAMES.length > 0) {
+            let index = config.ACTIVE_GAME_INDEX;
+            if (index === -1) index = Math.floor(Math.random() * config.GAMES.length);
+            return { type: 'redirect', redirect: { extensionPath: '/' + config.GAMES[index].path } };
+          }
+          return { type: 'redirect', redirect: { extensionPath: '/assets/blocked-pages/blocked.html' } };
+      }
+    })();
+
+    const addRule = (priority, filter, isDomain = false) => {
+      if (rules.length >= DYNAMIC_RULE_LIMIT) return false;
+      const clean = filter.trim().toLowerCase();
+      if (!clean) return false;
+
+      if (isDomain) {
+        const asciiDomain = toPunycode(clean);
+        if (!isAscii(asciiDomain)) return false;
+        rules.push({
+          id: ruleId++,
+          priority,
+          action,
+          condition: {
+            urlFilter: `||${asciiDomain}^`,
+            resourceTypes: ['main_frame']
+          }
+        });
+        return true;
+      }
+
+      if (!isAscii(clean)) return false;
+      rules.push({
+        id: ruleId++,
+        priority,
+        action,
+        condition: {
+          urlFilter: `*${clean}*`,
+          resourceTypes: ['main_frame']
+        }
+      });
+      return true;
+    };
+
+    [...new Set(config.DOMAINS)].forEach(d => addRule(10, d, true));
+    [...new Set(config.KEYWORDS)].forEach(k => addRule(9, k));
+    config.PAGE_URLS.forEach(p => addRule(8, p));
+
+    console.log(`[BlockX] Applying ${rules.length}/${DYNAMIC_RULE_LIMIT} dynamic user rules.`);
+
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: oldRuleIds,
+      addRules: rules
+    });
+
+    chrome.storage.session.remove('CACHED_BADWORDS');
+
+  } catch (err) {
+    console.error("[BlockX] Fatal error in updateBlockingRules:", err);
+  }
+}
+
+// ------------------------------------------------------------------
+// EVENT LISTENERS
+// ------------------------------------------------------------------
+chrome.runtime.onInstalled.addListener(() => {
+  loadMasterDomainList();
+  updateBlockingRules();
+});
+chrome.runtime.onStartup.addListener(() => {
+  loadMasterDomainList();
+  updateBlockingRules();
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && (changes.CUSTOM_DOMAINS || changes.CUSTOM_KEYWORDS || changes.BLOCK_METHOD)) {
+    updateBlockingRules();
+  }
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getConfig') {
+    sendResponse({ config: CONFIG });
+  }
+  if (request.action === 'triggerBlock' && sender.tab) {
+    const url = new URL(sender.tab.url);
+    const targetUrl = getBlockUrl(CONFIG.BLOCK_METHOD, url.hostname);
+    chrome.tabs.update(sender.tab.id, { url: targetUrl });
+  }
+  if (request.action === 'isMasterBlocked') {
+    const domain = request.domain?.toLowerCase().replace(/^www\./, '');
+    sendResponse({ blocked: isMasterBlocked(domain) });
+  }
+  return true;
+});

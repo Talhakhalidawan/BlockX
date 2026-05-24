@@ -10,25 +10,25 @@
     "storage"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background.js"
   },
   "host_permissions": [
     "<all_urls>"
   ],
   "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
   },
-  "options_page": "options.html",
+  "options_page": "src/options/options.html",
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "src/popup/popup.html",
     "default_icon": {
-      "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
     }
   },
   "declarative_net_request": {
@@ -36,19 +36,19 @@
       {
         "id": "ruleset_safesearch",
         "enabled": true,
-        "path": "rules.json"
+        "path": "assets/data/rules.json"
       },
       {
         "id": "ruleset_blocklist",
         "enabled": true,
-        "path": "blocklist_rules.json"
+        "path": "assets/data/blocklist_rules.json"
       }
     ]
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["config.js", "content.js"],
+      "js": ["src/config.js", "src/content.js"],
       "run_at": "document_start",
       "all_frames": true
     }
@@ -56,10 +56,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "config.js",
-        "blocked.html",
-        "blocked-pages/*",
-        "data/*"
+        "src/config.js",
+        "assets/blocked-pages/blocked.html",
+        "assets/blocked-pages/*",
+        "assets/data/*"
       ],
       "matches": ["<all_urls>"]
     }
