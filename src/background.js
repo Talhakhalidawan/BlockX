@@ -153,7 +153,7 @@ async function updateBlockingRules() {
         priority,
         action,
         condition: {
-          urlFilter: `*${clean}*`,
+          urlFilter: clean,
           resourceTypes: ['main_frame']
         }
       });
@@ -195,6 +195,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     const shouldUpdate = [
       'CUSTOM_DOMAINS',
       'CUSTOM_KEYWORDS',
+      'CUSTOM_PAGES',
       'BLOCK_METHOD',
       'ACTIVE_GAME_INDEX'
     ].some(key => changes[key] !== undefined);
@@ -226,4 +227,93 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ blocked: isMasterBlocked(domain) });
   }
   return true;
+});
+
+// ------------------------------------------------------------------
+// RELIABLE SPA NAVIGATION INTERCEPTION (tabs.onUpdated)
+// ------------------------------------------------------------------
+
+/**
+ * Checks if the URL matches custom domains, pages, keywords, or master blocked list.
+ */
+function shouldBlockUrl(urlStr, config) {
+  if (!urlStr) return false;
+  const urlLower = urlStr.toLowerCase();
+  
+  if (urlLower.startsWith('chrome-extension://') || urlLower.startsWith('chrome://') || urlLower.startsWith('about:')) {
+    return false;
+  }
+
+  // 1. Check custom domains
+  if (config.DOMAINS && config.DOMAINS.length > 0) {
+    try {
+      const parsed = new URL(urlStr);
+      const hostname = parsed.hostname.toLowerCase();
+      const domainMatch = config.DOMAINS.some(d => {
+        const clean = d.trim().toLowerCase();
+        return hostname === clean || hostname.endsWith('.' + clean);
+      });
+      if (domainMatch) return true;
+    } catch (e) {
+      const domainMatch = config.DOMAINS.some(d => {
+        const clean = d.trim().toLowerCase();
+        return urlLower.includes(clean);
+      });
+      if (domainMatch) return true;
+    }
+  }
+
+  // 2. Check custom pages
+  if (config.PAGE_URLS && config.PAGE_URLS.length > 0) {
+    const pageMatch = config.PAGE_URLS.some(p => {
+      const clean = p.trim().toLowerCase();
+      const cleanPattern = clean.replace(/^https?:\/\//i, '');
+      return urlLower.includes(cleanPattern);
+    });
+    if (pageMatch) return true;
+  }
+
+  // 3. Check custom keywords
+  if (config.KEYWORDS && config.KEYWORDS.length > 0) {
+    const keywordMatch = config.KEYWORDS.some(k => {
+      const clean = k.trim().toLowerCase();
+      return urlLower.includes(clean);
+    });
+    if (keywordMatch) return true;
+  }
+
+  // 4. Check master domains list
+  try {
+    const parsed = new URL(urlStr);
+    const hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    if (isMasterBlocked(hostname)) return true;
+  } catch (e) {
+    // Ignore URL parsing errors
+  }
+
+  return false;
+}
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    const url = changeInfo.url;
+    if (url.startsWith('chrome-extension://') || url.startsWith('chrome://') || url.startsWith('about:')) {
+      return;
+    }
+
+    const config = await loadConfig();
+    if (config.BLOCK_METHOD === 'none') return;
+
+    if (shouldBlockUrl(url, config)) {
+      console.log(`[BlockX] Intercepted blocked URL via tabs.onUpdated: ${url}`);
+      try {
+        const parsedUrl = new URL(url);
+        const targetUrl = getBlockUrl(config.BLOCK_METHOD, parsedUrl.hostname);
+        chrome.tabs.update(tabId, { url: targetUrl });
+      } catch (err) {
+        const targetUrl = getBlockUrl(config.BLOCK_METHOD, '');
+        chrome.tabs.update(tabId, { url: targetUrl });
+      }
+    }
+  }
 });

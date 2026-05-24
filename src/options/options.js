@@ -4,6 +4,7 @@ const sections = {
     general: { title: "General Settings", subtitle: "Configure your core protection parameters." },
     lists: { title: "Domain Management", subtitle: "Manage the database of restricted hostnames." },
     keywords: { title: "Content Filtering", subtitle: "Define patterns to block based on page content." },
+    pages: { title: "Page Link Restriction", subtitle: "Filter traffic to specific URLs and paths." },
     security: { title: "Security Protection", subtitle: "Secure your configuration with a dashboard password." }
 };
 
@@ -11,6 +12,7 @@ let state = {
     BLOCK_METHOD: 'blocked_page',
     CUSTOM_DOMAINS: [],
     CUSTOM_KEYWORDS: [],
+    CUSTOM_PAGES: [],
     ACTIVE_GAME_INDEX: -1,
     SECURITY_ENABLED: false,
     PASSWORD: '',
@@ -40,9 +42,11 @@ async function init() {
     populateGames();
     setupListManager('domain-input', 'add-domain-btn', 'domain-list', 'CUSTOM_DOMAINS');
     setupListManager('keyword-input', 'add-keyword-btn', 'keyword-list', 'CUSTOM_KEYWORDS');
+    setupListManager('page-input', 'add-page-btn', 'page-list', 'CUSTOM_PAGES');
     
     renderList('domain-list', 'CUSTOM_DOMAINS');
     renderList('keyword-list', 'CUSTOM_KEYWORDS');
+    renderList('page-list', 'CUSTOM_PAGES');
 
     // 4. Prevention: Tamper-proof the gateway
     monitorGatewayTampering();
@@ -191,6 +195,7 @@ function saveState() {
         BLOCK_METHOD: state.BLOCK_METHOD,
         CUSTOM_DOMAINS: state.CUSTOM_DOMAINS,
         CUSTOM_KEYWORDS: state.CUSTOM_KEYWORDS,
+        CUSTOM_PAGES: state.CUSTOM_PAGES,
         ACTIVE_GAME_INDEX: state.ACTIVE_GAME_INDEX,
         SECURITY_ENABLED: state.SECURITY_ENABLED,
         PASSWORD: state.PASSWORD,
@@ -278,6 +283,39 @@ function setupListManager(inputId, btnId, listId, stateKey) {
             const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z0-9-]{2,})+$/;
             if (!domainPattern.test(cleanVal)) {
                 showToast("Invalid domain format! Must be e.g. facebook.com (not a keyword).");
+                return;
+            }
+            val = cleanVal;
+        }
+
+        // Page Sanitization & Validation
+        if (stateKey === 'CUSTOM_PAGES') {
+            let cleanVal = val;
+            
+            // Add a temporary protocol if not present to let the URL parser handle it reliably
+            let urlToParse = cleanVal;
+            if (!/^https?:\/\//i.test(cleanVal)) {
+                urlToParse = 'http://' + cleanVal;
+            }
+            
+            try {
+                const parsed = new URL(urlToParse);
+                const host = parsed.hostname.replace(/^www\./i, '');
+                const pathAndQuery = parsed.pathname + parsed.search;
+                
+                // Reject if it is a plain domain (must have path or query components!)
+                if ((pathAndQuery === '/' || pathAndQuery === '') && parsed.search === '') {
+                    showToast("Must be a page link, not a plain domain (e.g. site.com/page)!");
+                    return;
+                }
+                
+                cleanVal = host + pathAndQuery;
+                // Strip trailing slash if present to normalize
+                if (cleanVal.endsWith('/')) {
+                    cleanVal = cleanVal.slice(0, -1);
+                }
+            } catch (e) {
+                showToast("Invalid page URL format!");
                 return;
             }
             val = cleanVal;
@@ -413,6 +451,7 @@ async function restore_options() {
             BLOCK_METHOD: 'blocked_page',
             CUSTOM_DOMAINS: [],
             CUSTOM_KEYWORDS: [],
+            CUSTOM_PAGES: [],
             ACTIVE_GAME_INDEX: -1,
             SECURITY_ENABLED: false,
             PASSWORD: '',
@@ -462,6 +501,7 @@ function exportSettings() {
         "BLOCK_METHOD",
         "CUSTOM_DOMAINS",
         "CUSTOM_KEYWORDS",
+        "CUSTOM_PAGES",
         "ACTIVE_GAME_INDEX",
         "SECURITY_ENABLED",
         "PASSWORD",
@@ -508,6 +548,7 @@ function handleImport(event) {
                 BLOCK_METHOD: imported.BLOCK_METHOD || "blocked_page",
                 CUSTOM_DOMAINS: Array.isArray(imported.CUSTOM_DOMAINS) ? imported.CUSTOM_DOMAINS : [],
                 CUSTOM_KEYWORDS: Array.isArray(imported.CUSTOM_KEYWORDS) ? imported.CUSTOM_KEYWORDS : [],
+                CUSTOM_PAGES: Array.isArray(imported.CUSTOM_PAGES) ? imported.CUSTOM_PAGES : [],
                 ACTIVE_GAME_INDEX: typeof imported.ACTIVE_GAME_INDEX === 'number' ? imported.ACTIVE_GAME_INDEX : -1,
                 SECURITY_ENABLED: !!imported.SECURITY_ENABLED,
                 PASSWORD: imported.PASSWORD || "",

@@ -33,6 +33,10 @@
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path><path d="M7 7h.01"></path></svg>
                     <span>Keywords</span>
                 </a>
+                <a href="#" class="nav-link" data-section="pages">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Pages</span>
+                </a>
                 <a href="#" class="nav-link" data-section="security">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                     <span>Security</span>
@@ -210,6 +214,29 @@
                                 </button>
                             </div>
                             <div id="keyword-list" class="tag-cloud">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pages Section -->
+                <div id="section-pages" class="settings-section">
+                    <div class="settings-group">
+                        <div class="group-header">
+                            <h3>Restricted Pages</h3>
+                            <p>Traffic to these specific page links or paths will be blocked cleanly.</p>
+                        </div>
+                        
+                        <div class="interactive-list-manager">
+                            <div class="input-row">
+                                <input type="text" id="page-input" placeholder="Add new page path (e.g. reddit.com/r/gaming)">
+                                <button id="add-page-btn" class="btn btn-secondary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add
+                                </button>
+                            </div>
+                            <div id="page-list" class="tag-cloud">
                                 <!-- Populated by JS -->
                             </div>
                         </div>

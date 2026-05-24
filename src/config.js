@@ -36,11 +36,19 @@ async function loadConfig() {
       BLOCK_METHOD: 'blocked_page',
       CUSTOM_KEYWORDS: [],
       CUSTOM_DOMAINS: [],
+      CUSTOM_PAGES: [
+        'reddit.com/r/nsfw',
+        'reddit.com/r/porn',
+        'twitter.com/search?q=porn',
+        'google.com/search?q=porn',
+        'bing.com/search?q=porn'
+      ],
       ACTIVE_GAME_INDEX: -1
     }, (items) => {
       CONFIG.BLOCK_METHOD = items.BLOCK_METHOD;
       CONFIG.KEYWORDS = items.CUSTOM_KEYWORDS;
       CONFIG.DOMAINS = items.CUSTOM_DOMAINS;
+      CONFIG.PAGE_URLS = items.CUSTOM_PAGES;
       CONFIG.ACTIVE_GAME_INDEX = items.ACTIVE_GAME_INDEX;
       resolve(CONFIG);
     });

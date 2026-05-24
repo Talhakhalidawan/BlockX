@@ -1,6 +1,40 @@
 // content.js
 (async function() {
+  // --- 1. INSTANT CSS INJECTION TO HIDE YOUTUBE SHORTS UI ELEMENTS ---
+  if (window.location.hostname.includes('youtube.com')) {
+    const shortsStyle = document.createElement('style');
+    shortsStyle.textContent = `
+      ytd-guide-entry-renderer:has(a[href="/shorts"]),
+      ytd-mini-guide-entry-renderer[aria-label="Shorts"],
+      ytd-mini-guide-entry-renderer[title="Shorts"],
+      a[path="shorts"],
+      ytd-rich-shelf-renderer[is-shorts],
+      ytd-reel-shelf-renderer,
+      ytd-item-section-renderer:has(ytd-reel-shelf-renderer),
+      ytd-shelf-renderer:has(a[href*="/shorts/"]),
+      ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+      ytd-video-renderer:has(a[href*="/shorts/"]),
+      [title="Shorts"],
+      [aria-label="Shorts"] {
+        display: none !important;
+      }
+    `;
+    (document.head || document.documentElement).appendChild(shortsStyle);
+  }
+
   await loadConfig();
+
+  // --- 2. LISTEN FOR MAIN WORLD SPA BLOCKED NOTIFICATIONS & POPSTATE ---
+  window.addEventListener('message', (event) => {
+    if (event.data && (event.data.type === 'SHORTS_BLOCKED' || event.data.type === 'URL_CHANGED')) {
+      console.log('[ShortsBlocker] Received SPA URL change from main world:', event.data.url);
+      verifyPageSafety();
+    }
+  });
+
+  window.addEventListener('popstate', () => {
+    verifyPageSafety();
+  });
   
   let filterRegex = null;
 
@@ -52,13 +86,28 @@
     return filterRegex.test(text);
   }
 
-  // Phase 1: Pre‑check URL and domain instantly
-  const currentHostname = window.location.hostname;
-  const isBlockedDomain = CONFIG.DOMAINS.some(d => 
-    currentHostname === d || currentHostname.endsWith('.' + d)
-  );
+  function isBlockedDomain(hostname) {
+    if (!hostname || !CONFIG.DOMAINS) return false;
+    const lowerHost = hostname.toLowerCase();
+    return CONFIG.DOMAINS.some(d => {
+      const cleanDomain = d.trim().toLowerCase();
+      return lowerHost === cleanDomain || lowerHost.endsWith('.' + cleanDomain);
+    });
+  }
 
-  if (isBlockedDomain || isExplicit(window.location.href)) {
+  // Check if current URL matches custom blocked pages
+  function isBlockedPage(url) {
+    if (!url || !CONFIG.PAGE_URLS) return false;
+    const lowerUrl = url.toLowerCase();
+    return CONFIG.PAGE_URLS.some(p => {
+      const cleanPattern = p.trim().toLowerCase();
+      return lowerUrl.includes(cleanPattern);
+    });
+  }
+
+  // Phase 1: Pre‑check URL, domain, and specific pages instantly
+  const currentHostname = window.location.hostname;
+  if (isBlockedDomain(currentHostname) || isBlockedPage(window.location.href) || isExplicit(window.location.href)) {
     handleBlock();
     return;
   }
@@ -71,8 +120,12 @@
   // Phase 3: Wait for regex and then verify
   await prepareFilter();
 
+  // Actively check for transitions (including SPA history pushes)
   function verifyPageSafety() {
-    if (isExplicit(document.title) || isExplicit(window.location.href)) {
+    const currentUrl = window.location.href;
+    const currentHost = window.location.hostname;
+
+    if (isBlockedDomain(currentHost) || isBlockedPage(currentUrl) || isExplicit(document.title) || isExplicit(currentUrl)) {
       observer.disconnect();
       handleBlock();
       return true;
