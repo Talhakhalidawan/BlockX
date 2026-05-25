@@ -1,7 +1,7 @@
 let CONFIG = {
   // 'blocked_page', 'infinite_hang', 'data_uri'
-  BLOCK_METHOD: 'blocked_page', 
-  
+  BLOCK_METHOD: 'blocked_page',
+
   // If true, shows the game specified in ACTIVE_GAME_INDEX instead of blocked.html
   SHOW_GAME_INSTANTLY: true,
   ACTIVE_GAME_INDEX: 0, 
