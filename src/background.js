@@ -294,31 +294,7 @@ function shouldBlockUrl(urlStr, config) {
   return false;
 }
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
-    const url = changeInfo.url;
-    if (url.startsWith('chrome-extension://') || url.startsWith('chrome://') || url.startsWith('about:')) {
-      return;
-    }
-
-    const config = await loadConfig();
-    if (config.BLOCK_METHOD === 'none') return;
-
-    if (shouldBlockUrl(url, config)) {
-      console.log(`[BlockX] Intercepted blocked URL via tabs.onUpdated: ${url}`);
-      try {
-        const parsedUrl = new URL(url);
-        const targetUrl = getBlockUrl(config.BLOCK_METHOD, parsedUrl.hostname);
-        chrome.tabs.update(tabId, { url: targetUrl });
-      } catch (err) {
-        const targetUrl = getBlockUrl(config.BLOCK_METHOD, '');
-        chrome.tabs.update(tabId, { url: targetUrl });
-      }
-    }
-  }
-});
-
-chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+chrome.webNavigation.onCommitted.addListener(async (details) => {
   if (details.frameId !== 0) return; // Target main frame only
   const url = details.url;
   
@@ -326,11 +302,25 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     return;
   }
 
+  // Prevent back-button redirect loop natively in the background worker
+  if (details.transitionQualifiers.includes('forward_back')) {
+    const config = await loadConfig();
+    if (shouldBlockUrl(url, config)) {
+      console.log(`[BlockX] Back/Forward navigation to blocked URL committed. Going back natively.`);
+      chrome.tabs.goBack(details.tabId).catch((err) => {
+        console.warn("[BlockX] Failed to go back natively:", err.message);
+        // Safe fallback: if there's no back page, close the tab to prevent infinite reload!
+        chrome.tabs.remove(details.tabId).catch(() => {});
+      });
+      return;
+    }
+  }
+
   const config = await loadConfig();
   if (config.BLOCK_METHOD === 'none') return;
 
   if (shouldBlockUrl(url, config)) {
-    console.log(`[BlockX] Intercepted blocked URL via onBeforeNavigate: ${url}`);
+    console.log(`[BlockX] Intercepted blocked URL via onCommitted: ${url}`);
     try {
       const parsedUrl = new URL(url);
       const targetUrl = getBlockUrl(config.BLOCK_METHOD, parsedUrl.hostname);
