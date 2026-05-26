@@ -10,6 +10,7 @@ const sections = {
 
 let state = {
     BLOCK_METHOD: 'blocked_page',
+    CUSTOM_REDIRECT_URL: '',
     CUSTOM_DOMAINS: [],
     CUSTOM_KEYWORDS: [],
     CUSTOM_PAGES: [],
@@ -44,6 +45,24 @@ async function init() {
     setupListManager('keyword-input', 'add-keyword-btn', 'keyword-list', 'CUSTOM_KEYWORDS');
     setupListManager('page-input', 'add-page-btn', 'page-list', 'CUSTOM_PAGES');
     
+    const customUrlInput = document.getElementById('custom-redirect-input');
+    const customUrlBtn = document.getElementById('save-custom-url-btn');
+    if (customUrlBtn && customUrlInput) {
+        const saveCustomUrl = () => {
+            let val = customUrlInput.value.trim();
+            if (val && !/^https?:\/\//i.test(val)) val = 'https://' + val;
+            state.CUSTOM_REDIRECT_URL = val;
+            saveState();
+            if (val) showToast('Custom URL saved.');
+        };
+
+        customUrlBtn.addEventListener('click', saveCustomUrl);
+        customUrlInput.addEventListener('blur', saveCustomUrl);
+        customUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveCustomUrl();
+        });
+    }
+
     renderList('domain-list', 'CUSTOM_DOMAINS');
     renderList('keyword-list', 'CUSTOM_KEYWORDS');
     renderList('page-list', 'CUSTOM_PAGES');
@@ -193,6 +212,7 @@ function saveState() {
 
     chrome.storage.local.set({
         BLOCK_METHOD: state.BLOCK_METHOD,
+        CUSTOM_REDIRECT_URL: state.CUSTOM_REDIRECT_URL,
         CUSTOM_DOMAINS: state.CUSTOM_DOMAINS,
         CUSTOM_KEYWORDS: state.CUSTOM_KEYWORDS,
         CUSTOM_PAGES: state.CUSTOM_PAGES,
@@ -231,11 +251,14 @@ function setupNavigation() {
 
 function updateHubVisibility(method) {
     const gameSection = document.getElementById('game-selection');
-    if (!gameSection) return;
-    if (method === 'blocked_page') {
-        gameSection.classList.remove('hidden');
-    } else {
-        gameSection.classList.add('hidden');
+    const urlSection = document.getElementById('custom-url-selection');
+    if (gameSection) {
+        if (method === 'blocked_page') gameSection.classList.remove('hidden');
+        else gameSection.classList.add('hidden');
+    }
+    if (urlSection) {
+        if (method === 'custom_url') urlSection.classList.remove('hidden');
+        else urlSection.classList.add('hidden');
     }
 }
 
@@ -449,6 +472,7 @@ async function restore_options() {
     return new Promise((resolve) => {
         chrome.storage.local.get({
             BLOCK_METHOD: 'blocked_page',
+            CUSTOM_REDIRECT_URL: '',
             CUSTOM_DOMAINS: [],
             CUSTOM_KEYWORDS: [],
             CUSTOM_PAGES: [],
@@ -459,6 +483,9 @@ async function restore_options() {
         }, (items) => {
             state = items;
             applyTheme(state.THEME); // Re-apply theme after load
+
+            const customUrlInput = document.getElementById('custom-redirect-input');
+            if (customUrlInput) customUrlInput.value = state.CUSTOM_REDIRECT_URL || '';
 
             const methodInput = document.querySelector(`input[name="blockMethod"][value="${state.BLOCK_METHOD}"]`);
             if (methodInput) {

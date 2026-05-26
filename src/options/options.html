@@ -128,6 +128,21 @@
                                     </div>
                                 </div>
                             </label>
+                            <label class="enforcement-card">
+                                <input type="radio" name="blockMethod" value="custom_url" class="sr-only">
+                                <div class="card-content">
+                                    <div class="card-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                    </div>
+                                    <div class="card-info">
+                                        <span class="title">Custom Redirect</span>
+                                        <span class="desc">Send traffic to your own URL.</span>
+                                    </div>
+                                    <div class="selection-check">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </div>
+                                </div>
+                            </label>
                         </div>
                     </div>
 
@@ -147,6 +162,17 @@
                             <div id="game-list" class="hub-list">
                                 <!-- Populated by JS -->
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="custom-url-selection" class="settings-group collapsible hidden">
+                        <div class="group-header">
+                            <h3>Redirect URL</h3>
+                            <p>Enter the full URL (e.g. https://www.google.com) to redirect blocked traffic.</p>
+                        </div>
+                        <div class="input-row">
+                            <input type="url" id="custom-redirect-input" placeholder="https://...">
+                            <button id="save-custom-url-btn" class="btn btn-secondary">Save URL</button>
                         </div>
                     </div>
 

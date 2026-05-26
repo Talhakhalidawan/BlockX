@@ -80,6 +80,13 @@ async function updateBlockingRules() {
           return { type: 'redirect', redirect: { url: 'http://1.1.1.1:81' } };
         case 'data_uri':
           return { type: 'redirect', redirect: { url: 'data:text/plain,Blocked' } };
+        case 'custom_url':
+          let custom = config.CUSTOM_REDIRECT_URL;
+          if (custom && custom.trim() !== '') {
+            if (!/^https?:\/\//i.test(custom)) custom = 'http://' + custom;
+            return { type: 'redirect', redirect: { url: custom } };
+          }
+          // Fall through to default if empty
         default:
           if (config.SHOW_GAME_INSTANTLY && config.GAMES.length > 0) {
             let index = config.ACTIVE_GAME_INDEX;

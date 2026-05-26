@@ -6,6 +6,9 @@ let CONFIG = {
   SHOW_GAME_INSTANTLY: true,
   ACTIVE_GAME_INDEX: 0, 
 
+  // Custom Redirect URL
+  CUSTOM_REDIRECT_URL: '',
+
   // Custom Keywords (Overridden by badwords.json if loaded)
   KEYWORDS: [],
 
@@ -34,6 +37,7 @@ async function loadConfig() {
   return new Promise((resolve) => {
     chrome.storage.local.get({
       BLOCK_METHOD: 'blocked_page',
+      CUSTOM_REDIRECT_URL: '',
       CUSTOM_KEYWORDS: [],
       CUSTOM_DOMAINS: [],
       CUSTOM_PAGES: [
@@ -46,6 +50,7 @@ async function loadConfig() {
       ACTIVE_GAME_INDEX: -1
     }, (items) => {
       CONFIG.BLOCK_METHOD = items.BLOCK_METHOD;
+      CONFIG.CUSTOM_REDIRECT_URL = items.CUSTOM_REDIRECT_URL;
       CONFIG.KEYWORDS = items.CUSTOM_KEYWORDS;
       CONFIG.DOMAINS = items.CUSTOM_DOMAINS;
       CONFIG.PAGE_URLS = items.CUSTOM_PAGES;
@@ -95,6 +100,18 @@ function getBlockUrl(method, hostname, extensionUrl) {
       return "http://1.1.1.1:81";
     case 'data_uri':
       return "data:" + (hostname || "Blocked");
+    case 'custom_url':
+      let url = CONFIG.CUSTOM_REDIRECT_URL;
+      if (url && url.trim() !== '') {
+        if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+        return url;
+      }
+      // Fallback to interactive hub if URL is empty
+      if (CONFIG.SHOW_GAME_INSTANTLY && CONFIG.GAMES.length > 0) {
+        let gameIndex = CONFIG.ACTIVE_GAME_INDEX;
+        if (gameIndex === -1) gameIndex = Math.floor(Math.random() * CONFIG.GAMES.length);
+        return chrome.runtime.getURL(CONFIG.GAMES[gameIndex].path);
+      }
     case 'blocked_page':
     default:
       return extensionUrl || chrome.runtime.getURL("assets/blocked-pages/blocked.html");
