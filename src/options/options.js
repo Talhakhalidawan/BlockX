@@ -50,7 +50,7 @@ async function init() {
     if (customUrlBtn && customUrlInput) {
         const saveCustomUrl = () => {
             let val = customUrlInput.value.trim();
-            if (val && !/^https?:\/\//i.test(val)) val = 'https://' + val;
+            if (val && !/^https?:\/\//i.test(val));
             state.CUSTOM_REDIRECT_URL = val;
             saveState();
             if (val) showToast('Custom URL saved.');
